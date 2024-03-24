@@ -11,8 +11,10 @@
         "websocket": "tsx websocket/server.ts"
     },
     "dependencies": {
+        "@radix-ui/react-avatar": "^1.0.4",
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.1.0",
+        "dayjs": "^1.11.10",
         "express": "^4.19.1",
         "kafkajs": "^2.2.4",
         "lucide-react": "^0.363.0",

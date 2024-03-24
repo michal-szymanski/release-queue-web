@@ -3,6 +3,7 @@
 import { io } from 'socket.io-client';
 import { useEffect, useState } from 'react';
 import { MergeRequestEvent, mergeRequestEventSchema } from '@/types';
+import QueueItem from '@/components/queue-item';
 
 const Queue = () => {
     const [events, setEvents] = useState<MergeRequestEvent[]>([]);
@@ -34,6 +35,12 @@ const Queue = () => {
         return <div>Loading</div>;
     }
 
-    return <div>Queue</div>;
+    return (
+        <div>
+            {events.map((event) => (
+                <QueueItem key={event.object_attributes.id} event={event} />
+            ))}
+        </div>
+    );
 };
 export default Queue;
