@@ -2,9 +2,10 @@
 
 import { io } from 'socket.io-client';
 import { useEffect, useState } from 'react';
+import { MergeRequestEvent, mergeRequestEventSchema } from '@/types';
 
 const Queue = () => {
-    const [payloads, setPayloads] = useState<object[]>([]);
+    const [events, setEvents] = useState<MergeRequestEvent[]>([]);
 
     useEffect(() => {
         const socket = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}:${process.env.NEXT_PUBLIC_WEBSOCKET_PORT}`);
@@ -18,8 +19,9 @@ const Queue = () => {
 
         socket.on('queue', (payload) => {
             if (payload) {
-                setPayloads((prev) => [...prev, payload]);
-                console.log('receiving', JSON.parse(payload));
+                const event = mergeRequestEventSchema.parse(JSON.parse(payload));
+                console.log('receiving', event);
+                setEvents((prev) => [...prev, event]);
             }
         });
 
@@ -28,13 +30,10 @@ const Queue = () => {
         };
     }, []);
 
-    return (
-        <div>
-            {/*{payloads.map((p, i) => (*/}
-            {/*    <div key={i}>{JSON.stringify(p)}</div>*/}
-            {/*))}*/}
-            Queue
-        </div>
-    );
+    if (!events.length) {
+        return <div>Loading</div>;
+    }
+
+    return <div>Queue</div>;
 };
 export default Queue;
