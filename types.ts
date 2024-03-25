@@ -1,5 +1,11 @@
 import { number, z } from 'zod';
 
+export const objectKindSchema = z.enum(['merge_request', 'pipeline', 'deployment', 'build']);
+
+export const gitlabWebhookEvent = z.object({
+    object_kind: objectKindSchema
+});
+
 const location = z.object({
     avatar_url: z.string().nullable(),
     ci_config_path: z.string(),
@@ -21,10 +27,12 @@ const location = z.object({
 
 export const mergeRequestEventSchema = z.object({
     changes: z.object({
-        prepared_at: z.object({
-            previous: z.string().nullable(),
-            current: z.string()
-        }),
+        prepared_at: z
+            .object({
+                previous: z.string().nullable(),
+                current: z.string()
+            })
+            .optional(),
         updated_at: z.object({
             previous: z.string(),
             current: z.string()
@@ -91,7 +99,7 @@ export const mergeRequestEventSchema = z.object({
         url: z.string(),
         work_in_progress: z.boolean()
     }),
-    object_kind: z.string(),
+    object_kind: z.literal(objectKindSchema.Enum.merge_request),
     project: location,
     repository: z.object({
         description: z.string().nullable(),

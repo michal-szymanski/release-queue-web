@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import { Kafka, logLevel } from 'kafkajs';
+import { gitlabWebhookEvent } from '@/types';
 
 dotenv.config();
 const app = express();
@@ -36,7 +37,9 @@ io.on('connection', (socket) => {
         await consumer.subscribe({ topic: 'gitlab-webhook', fromBeginning: true });
         await consumer.run({
             eachMessage: async ({ topic, partition, message, heartbeat }) => {
-                socket.emit('queue', message.value?.toString());
+                const payload = JSON.parse(message.value?.toString() ?? '');
+                const { object_kind } = gitlabWebhookEvent.parse(payload);
+                socket.emit(object_kind, payload);
                 await heartbeat();
             }
         });

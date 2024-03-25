@@ -1,3 +1,5 @@
+'use client';
+
 import { MergeRequestEvent } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -18,7 +20,7 @@ const QueueItem = ({ event }: Props) => {
             <CardHeader>
                 <CardTitle className="flex items-end gap-2">
                     <a href={event.object_attributes.url}>{event.object_attributes.title}</a>
-                    <Badge className="capitalize">{event.object_attributes.action}</Badge>
+                    <Badge className="capitalize">{event.object_attributes.state}</Badge>
                 </CardTitle>
                 <CardDescription>Last update: {dayjs(event.object_attributes.updated_at).fromNow()}</CardDescription>
             </CardHeader>
