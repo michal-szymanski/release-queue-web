@@ -21,9 +21,8 @@ const Queue = () => {
         });
 
         socket.on(objectKindSchema.Enum.merge_request, (payload) => {
-            console.log(payload);
             const event = mergeRequestEventSchema.parse(payload);
-            console.log('receiving', event);
+            console.log(event);
             setEvents((prev) => [...prev.filter((e) => e.object_attributes.id !== event.object_attributes.id), event]);
         });
 

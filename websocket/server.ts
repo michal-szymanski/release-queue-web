@@ -36,7 +36,7 @@ io.on('connection', (socket) => {
         await consumer.connect();
         await consumer.subscribe({ topic: 'gitlab-webhook', fromBeginning: true });
         await consumer.run({
-            eachMessage: async ({ topic, partition, message, heartbeat }) => {
+            eachMessage: async ({ message, heartbeat }) => {
                 const payload = JSON.parse(message.value?.toString() ?? '');
                 const { object_kind } = gitlabWebhookEvent.parse(payload);
                 socket.emit(object_kind, payload);
@@ -45,8 +45,7 @@ io.on('connection', (socket) => {
         });
     };
 
-    run().catch((e) => console.error('Upstash Kafka error', e));
-    console.log('a user connected');
+    run().catch((e) => console.error('Kafka error', e));
 });
 
 const url = process.env.NEXT_PUBLIC_WEBSOCKET_URL;
