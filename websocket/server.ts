@@ -7,11 +7,22 @@ import { gitlabWebhookEvent } from '@/types';
 
 dotenv.config();
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded());
+
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
         origin: process.env.WEB_APP_URL
     }
+});
+
+app.post('/webhook', (req, res) => {
+    const payload = req.body;
+    const event = req.headers['x-gitlab-event'];
+    console.log(event);
+    console.log('Webhook', payload);
+    res.status(200).end();
 });
 
 io.on('connection', (socket) => {
