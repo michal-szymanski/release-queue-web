@@ -1,0 +1,7 @@
+node_modules
+.next
+.env*
+.idea
+.gitignore
+package.json
+pnpm-lock.yaml
