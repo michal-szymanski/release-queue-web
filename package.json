@@ -1,9 +1,9 @@
 {
-    "name": "release-queue",
+    "name": "release-queue-web",
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "next dev --port 2000",
+        "dev": "next dev",
         "build": "next build",
         "start": "next start",
         "lint": "next lint",

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MergeRequestEvent, mergeRequestEventSchema } from '@/types';
 import QueueItem from '@/components/queue-item';
 import autoAnimate from '@formkit/auto-animate';
+import { z } from 'zod';
 
 const Queue = () => {
     const [events, setEvents] = useState<MergeRequestEvent[]>([]);
@@ -20,11 +21,11 @@ const Queue = () => {
             console.log('client disconnected', socket.id);
         });
 
-        socket.on('merge-request', (payload) => {
+        socket.on('merge-requests', (payload) => {
             console.log(payload);
-            const event = mergeRequestEventSchema.parse(payload);
-            console.log(event);
-            setEvents((prev) => [...prev.filter((e) => e.object_attributes.id !== event.object_attributes.id), event]);
+            const events = z.array(mergeRequestEventSchema).parse(payload);
+            console.log(events);
+            setEvents(events);
         });
 
         return () => {
