@@ -1,4 +1,4 @@
-import { number, z } from 'zod';
+import { z } from 'zod';
 
 export const objectKindSchema = z.enum(['merge_request', 'pipeline', 'deployment', 'build']);
 
@@ -112,7 +112,7 @@ export const mergeRequestEventSchema = z.object({
     user: z.object({
         avatar_url: z.string(),
         email: z.string(),
-        id: number(),
+        id: z.number(),
         name: z.string(),
         username: z.string()
     })

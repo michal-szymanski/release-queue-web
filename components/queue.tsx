@@ -2,7 +2,7 @@
 
 import { io } from 'socket.io-client';
 import { useEffect, useRef, useState } from 'react';
-import { MergeRequestEvent, mergeRequestEventSchema, objectKindSchema } from '@/types';
+import { MergeRequestEvent, mergeRequestEventSchema } from '@/types';
 import QueueItem from '@/components/queue-item';
 import autoAnimate from '@formkit/auto-animate';
 
@@ -11,7 +11,7 @@ const Queue = () => {
     const parent = useRef(null);
 
     useEffect(() => {
-        const socket = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}:${process.env.NEXT_PUBLIC_WEBSOCKET_PORT}`);
+        const socket = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
         socket.on('connect', () => {
             console.log('client connected', socket.id);
         });
