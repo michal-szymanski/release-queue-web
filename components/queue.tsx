@@ -4,14 +4,17 @@ import { useMergeRequestsStore } from '@/hooks';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 const Queue = () => {
-    const { mergeRequestEvents } = useMergeRequestsStore();
+    const { queue } = useMergeRequestsStore();
     const [parent] = useAutoAnimate();
 
     return (
-        <div ref={parent} className="flex flex-col gap-2">
-            {mergeRequestEvents.map((event) => (
-                <QueueItem key={event.object_attributes.id} event={event} />
-            ))}
+        <div>
+            <h2>Queue</h2>
+            <div ref={parent} className="flex flex-col gap-2">
+                {queue.map((queueItem) => (
+                    <QueueItem key={queueItem.object_attributes.id} event={queueItem} />
+                ))}
+            </div>
         </div>
     );
 };

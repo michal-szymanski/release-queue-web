@@ -5,34 +5,58 @@ import { z } from 'zod';
 
 export class MergeRequestsStore {
     mergeRequestEvents: MergeRequestEvent[] = [];
+    queue: MergeRequestEvent[] = [];
+    socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
 
     constructor() {
         makeObservable(this, {
             mergeRequestEvents: observable,
-            setEvents: action
+            queue: observable,
+            socket: observable,
+            addToQueue: action,
+            setEvents: action,
+            setQueue: action
         });
+
+        this.addToQueue = this.addToQueue.bind(this);
+        this.removeFromQueue = this.removeFromQueue.bind(this);
 
         this.subscribe();
     }
 
     private subscribe() {
-        const socket = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
-
-        socket.on('connect', () => {
-            console.log('client connected', socket.id);
+        this.socket.on('connect', () => {
+            console.log('client connected', this.socket.id);
         });
 
-        socket.on('disconnect', () => {
-            console.log('client disconnected', socket.id);
+        this.socket.on('disconnect', () => {
+            console.log('client disconnected', this.socket.id);
         });
 
-        socket.on('merge-requests', (payload) => {
+        this.socket.on('merge-requests', (payload) => {
             const events = z.array(mergeRequestEventSchema).parse(payload);
             this.setEvents(events);
         });
+
+        this.socket.on('queue', (payload) => {
+            const queueItems = z.array(mergeRequestEventSchema).parse(payload);
+            this.setQueue(queueItems);
+        });
     }
 
-    setEvents(data: MergeRequestEvent[]) {
-        this.mergeRequestEvents = [...data];
+    setEvents(events: MergeRequestEvent[]) {
+        this.mergeRequestEvents = [...events];
+    }
+
+    setQueue(events: MergeRequestEvent[]) {
+        this.queue = [...events];
+    }
+
+    addToQueue(event: MergeRequestEvent) {
+        this.socket.emit('add-to-queue', event.object_attributes.id);
+    }
+
+    removeFromQueue(event: MergeRequestEvent) {
+        this.socket.emit('remove-from-queue', event.object_attributes.id);
     }
 }

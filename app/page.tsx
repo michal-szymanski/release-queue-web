@@ -3,12 +3,16 @@
 import Queue from '@/components/queue';
 import { MergeRequestsStore } from '@/stores/merge-requests-store';
 import { MergeRequestsContext } from '@/contexts';
+import OpenMergeRequests from '@/components/open-merge-requests';
 
 const Page = () => {
     return (
         <div>
             <MergeRequestsContext.Provider value={new MergeRequestsStore()}>
-                <Queue />
+                <div className="grid grid-cols-2 gap-5">
+                    <Queue />
+                    <OpenMergeRequests />
+                </div>
             </MergeRequestsContext.Provider>
         </div>
     );
