@@ -4,6 +4,7 @@ import Queue from '@/components/queue';
 import { MergeRequestsStore } from '@/stores/merge-requests-store';
 import { MergeRequestsContext } from '@/contexts';
 import OpenMergeRequests from '@/components/open-merge-requests';
+import { ThemeDropdown } from '@/components/theme-dropdown';
 
 const Page = () => {
     return (
@@ -13,6 +14,7 @@ const Page = () => {
                     <Queue />
                     <OpenMergeRequests />
                 </div>
+                <ThemeDropdown />
             </MergeRequestsContext.Provider>
         </div>
     );
