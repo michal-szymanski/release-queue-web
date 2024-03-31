@@ -63,7 +63,7 @@ export const mergeRequestEventSchema = z.object({
         last_commit: z.object({
             author: z.object({
                 name: z.string(),
-                email: z.string().email()
+                email: z.string()
             }),
             id: z.string(),
             message: z.string(),
