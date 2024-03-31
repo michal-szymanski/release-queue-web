@@ -26,11 +26,11 @@ export class MergeRequestsStore {
 
     private subscribe() {
         this.socket.on('connect', () => {
-            console.log('client connected', this.socket.id);
+            console.log(`Client connected. id: ${this.socket.id}`);
         });
 
         this.socket.on('disconnect', () => {
-            console.log('client disconnected', this.socket.id);
+            console.log(`Client disconnected. id: ${this.socket.id}`);
         });
 
         this.socket.on('merge-requests', (payload) => {
