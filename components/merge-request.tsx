@@ -13,11 +13,32 @@ dayjs.extend(relativeTime);
 
 type Props = {
     event: MergeRequestEvent;
+    isQueueItem: boolean;
 };
 
-const QueueItem = ({ event }: Props) => {
+const MergeRequest = ({ event, isQueueItem }: Props) => {
     const { queue, addToQueue, removeFromQueue } = useMergeRequestsStore();
     const isInQueue = queue.some((queueItem) => queueItem.object_attributes.id === event.object_attributes.id);
+
+    const renderButton = () => {
+        if (!isInQueue && !isQueueItem) {
+            return (
+                <Button type="button" onClick={() => addToQueue(event)}>
+                    Add to queue
+                </Button>
+            );
+        }
+        if (isInQueue && isQueueItem) {
+            return (
+                <Button type="button" onClick={() => removeFromQueue(event)}>
+                    Remove from queue
+                </Button>
+            );
+        }
+
+        return null;
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -29,16 +50,7 @@ const QueueItem = ({ event }: Props) => {
                         </div>
                         <CardDescription>Last update: {dayjs(event.object_attributes.updated_at).fromNow()}</CardDescription>
                     </div>
-                    {!isInQueue && (
-                        <Button type="button" onClick={() => addToQueue(event)}>
-                            Add to queue
-                        </Button>
-                    )}
-                    {isInQueue && (
-                        <Button type="button" onClick={() => removeFromQueue(event)}>
-                            Remove from queue
-                        </Button>
-                    )}
+                    {renderButton()}
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
@@ -56,4 +68,4 @@ const QueueItem = ({ event }: Props) => {
     );
 };
 
-export default observer(QueueItem);
+export default observer(MergeRequest);
