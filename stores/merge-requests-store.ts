@@ -1,20 +1,22 @@
-'use client';
-
 import { MergeRequestEvent, mergeRequestEventSchema } from '@/types';
 import { action, makeObservable, observable } from 'mobx';
 import { io } from 'socket.io-client';
 import { z } from 'zod';
 
 export class MergeRequestsStore {
-    mergeRequestsEvents: MergeRequestEvent[] = [];
+    mergeRequestEvents: MergeRequestEvent[] = [];
 
     constructor() {
         makeObservable(this, {
-            mergeRequestsEvents: observable,
+            mergeRequestEvents: observable,
             setEvents: action
         });
 
-        const socket = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`, {});
+        this.subscribe();
+    }
+
+    private subscribe() {
+        const socket = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
 
         socket.on('connect', () => {
             console.log('client connected', socket.id);
@@ -25,14 +27,12 @@ export class MergeRequestsStore {
         });
 
         socket.on('merge-requests', (payload) => {
-            // console.log(payload);
-            console.log('mobx');
             const events = z.array(mergeRequestEventSchema).parse(payload);
             this.setEvents(events);
         });
     }
 
     setEvents(data: MergeRequestEvent[]) {
-        this.mergeRequestsEvents = [...data];
+        this.mergeRequestEvents = [...data];
     }
 }
