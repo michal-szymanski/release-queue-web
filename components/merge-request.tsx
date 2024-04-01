@@ -46,24 +46,26 @@ const MergeRequest = ({ event, isQueueItem }: Props) => {
                     <div className="flex flex-col gap-2">
                         <div className="flex items-end gap-2">
                             <a href={event.object_attributes.url}>{event.object_attributes.title}</a>
-                            <Badge className="capitalize">{event.object_attributes.state}</Badge>
+                            {isQueueItem && <Badge className="capitalize">{event.object_attributes.state}</Badge>}
                         </div>
                         <CardDescription>Last update: {dayjs(event.object_attributes.updated_at).fromNow()}</CardDescription>
                     </div>
                     {renderButton()}
                 </CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                    <Avatar className="size-6">
-                        <AvatarImage src={event.user.avatar_url} />
-                        <AvatarFallback>
-                            <Skeleton className="size-6 rounded-full" />
-                        </AvatarFallback>
-                    </Avatar>
-                    <span>{event.user.name}</span>
-                </div>
-            </CardContent>
+            {isQueueItem && (
+                <CardContent className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                        <Avatar className="size-6">
+                            <AvatarImage src={event.user.avatar_url} />
+                            <AvatarFallback>
+                                <Skeleton className="size-6 rounded-full" />
+                            </AvatarFallback>
+                        </Avatar>
+                        <span>{event.user.name}</span>
+                    </div>
+                </CardContent>
+            )}
         </Card>
     );
 };
