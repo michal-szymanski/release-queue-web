@@ -4,7 +4,7 @@ import { useMergeRequestsStore } from '@/hooks';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 const OpenMergeRequests = () => {
-    const { mergeRequestEvents, queue } = useMergeRequestsStore();
+    const { mergeRequestEvents } = useMergeRequestsStore();
     const [parent] = useAutoAnimate();
 
     return (

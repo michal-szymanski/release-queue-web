@@ -9,13 +9,14 @@ export class MergeRequestsStore {
     socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
 
     constructor() {
-        makeObservable(this, {
+        makeObservable<MergeRequestsStore, 'setEvents' | 'setQueue'>(this, {
             mergeRequestEvents: observable,
             queue: observable,
             socket: observable,
-            addToQueue: action,
             setEvents: action,
-            setQueue: action
+            setQueue: action,
+            addToQueue: action,
+            removeFromQueue: action
         });
 
         this.addToQueue = this.addToQueue.bind(this);
@@ -44,11 +45,11 @@ export class MergeRequestsStore {
         });
     }
 
-    setEvents(events: MergeRequestEvent[]) {
+    private setEvents(events: MergeRequestEvent[]) {
         this.mergeRequestEvents = [...events];
     }
 
-    setQueue(events: MergeRequestEvent[]) {
+    private setQueue(events: MergeRequestEvent[]) {
         this.queue = [...events];
     }
 
