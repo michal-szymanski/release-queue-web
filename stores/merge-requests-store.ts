@@ -6,10 +6,10 @@ import { z } from 'zod';
 export class MergeRequestsStore {
     mergeRequestEvents: MergeRequestEvent[] = [];
     queue: MergeRequestEvent[] = [];
-    socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
+    private socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
 
     constructor() {
-        makeObservable<MergeRequestsStore, 'setEvents' | 'setQueue'>(this, {
+        makeObservable<MergeRequestsStore, 'socket' | 'setEvents' | 'setQueue'>(this, {
             mergeRequestEvents: observable,
             queue: observable,
             socket: observable,
