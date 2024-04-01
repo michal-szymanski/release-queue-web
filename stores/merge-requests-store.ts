@@ -1,5 +1,5 @@
 import { MergeRequestEvent, mergeRequestEventSchema } from '@/types';
-import { action, makeObservable, observable } from 'mobx';
+import { action, computed, makeObservable, observable } from 'mobx';
 import { io } from 'socket.io-client';
 import { z } from 'zod';
 
@@ -16,7 +16,8 @@ export class MergeRequestsStore {
             setEvents: action,
             setQueue: action,
             addToQueue: action,
-            removeFromQueue: action
+            removeFromQueue: action,
+            queueRepositories: computed
         });
 
         this.addToQueue = this.addToQueue.bind(this);
@@ -59,5 +60,9 @@ export class MergeRequestsStore {
 
     removeFromQueue(event: MergeRequestEvent) {
         this.socket.emit('remove-from-queue', event.object_attributes.id);
+    }
+
+    get queueRepositories() {
+        return Array.from(new Set(this.queue.map((queueItem) => queueItem.repository.name))).sort();
     }
 }
