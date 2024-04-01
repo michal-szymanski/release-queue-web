@@ -8,13 +8,10 @@ const OpenMergeRequests = () => {
     const [parent] = useAutoAnimate();
 
     return (
-        <div>
-            <h2>My merge requests</h2>
-            <div ref={parent} className="flex flex-col gap-2">
-                {mergeRequestEvents.map((event) => (
-                    <MergeRequest key={event.object_attributes.id} event={event} isQueueItem={false} />
-                ))}
-            </div>
+        <div ref={parent} className="flex flex-col gap-2">
+            {mergeRequestEvents.map((event) => (
+                <MergeRequest key={event.object_attributes.id} event={event} isQueueItem={false} />
+            ))}
         </div>
     );
 };

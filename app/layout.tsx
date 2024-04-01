@@ -22,10 +22,10 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className={cn('bg-background min-h-screen font-sans antialiased', fontSans.variable)}>
+            <body className={cn('flex min-h-screen flex-col bg-background font-sans antialiased', fontSans.variable)}>
                 <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
                     <Header />
-                    <main className="container">{children}</main>
+                    <main className="container flex flex-grow">{children}</main>
                 </ThemeProvider>
             </body>
         </html>

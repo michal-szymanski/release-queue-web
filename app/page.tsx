@@ -1,16 +1,16 @@
 'use client';
 
-import Queue from '@/components/queue';
 import { MergeRequestsStore } from '@/stores/merge-requests-store';
 import { MergeRequestsContext } from '@/contexts';
-import OpenMergeRequests from '@/components/open-merge-requests';
+import MergeRequests from '@/components/merge-requests';
+import Queue from '@/components/queue';
 
 const Page = () => {
     return (
         <MergeRequestsContext.Provider value={new MergeRequestsStore()}>
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid w-full grid-cols-2 grid-rows-1 gap-5 py-10">
                 <Queue />
-                <OpenMergeRequests />
+                <MergeRequests />
             </div>
         </MergeRequestsContext.Provider>
     );
