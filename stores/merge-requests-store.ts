@@ -64,7 +64,7 @@ export class MergeRequestsStore {
 
     get queueMap() {
         const map = new Map<string, { id: number; json: MergeRequestEvent }[]>();
-        const uniqueRepositoryNames = Array.from(new Set(this.queue.map((queueItem) => queueItem.json.repository.name))).sort();
+        const uniqueRepositoryNames = Array.from(new Set(this.queue.map((queueItem) => queueItem.json.repository.name)));
         for (const repositoryName of uniqueRepositoryNames) {
             const queueGroup = this.queue.filter((queueItem) => queueItem.json.repository.name === repositoryName).sort((a, b) => a.id - b.id);
             map.set(repositoryName, queueGroup);
