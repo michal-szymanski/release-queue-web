@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 export class MergeRequestsStore {
     mergeRequestEvents: MergeRequestEvent[] = [];
-    queue: MergeRequestEvent[] = [];
+    queue: { id: number; json: MergeRequestEvent }[] = [];
     private socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
 
     constructor() {
@@ -17,7 +17,7 @@ export class MergeRequestsStore {
             setQueue: action,
             addToQueue: action,
             removeFromQueue: action,
-            queueRepositories: computed
+            queueMap: computed
         });
 
         this.addToQueue = this.addToQueue.bind(this);
@@ -41,7 +41,7 @@ export class MergeRequestsStore {
         });
 
         this.socket.on('queue', (payload) => {
-            const queueItems = z.array(mergeRequestEventSchema).parse(payload);
+            const queueItems = z.array(z.object({ id: z.number(), json: mergeRequestEventSchema })).parse(payload);
             this.setQueue(queueItems);
         });
     }
@@ -50,7 +50,7 @@ export class MergeRequestsStore {
         this.mergeRequestEvents = [...events];
     }
 
-    private setQueue(events: MergeRequestEvent[]) {
+    private setQueue(events: { id: number; json: MergeRequestEvent }[]) {
         this.queue = [...events];
     }
 
@@ -62,7 +62,13 @@ export class MergeRequestsStore {
         this.socket.emit('remove-from-queue', event.object_attributes.id);
     }
 
-    get queueRepositories() {
-        return Array.from(new Set(this.queue.map((queueItem) => queueItem.repository.name))).sort();
+    get queueMap() {
+        const map = new Map<string, { id: number; json: MergeRequestEvent }[]>();
+        const uniqueRepositoryNames = Array.from(new Set(this.queue.map((queueItem) => queueItem.json.repository.name))).sort();
+        for (const repositoryName of uniqueRepositoryNames) {
+            const queueGroup = this.queue.filter((queueItem) => queueItem.json.repository.name === repositoryName).sort((a, b) => a.id - b.id);
+            map.set(repositoryName, queueGroup);
+        }
+        return map;
     }
 }

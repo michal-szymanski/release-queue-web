@@ -18,7 +18,7 @@ type Props = {
 
 const MergeRequest = ({ event, isQueueItem }: Props) => {
     const { queue, addToQueue, removeFromQueue } = useMergeRequestsStore();
-    const isInQueue = queue.some((queueItem) => queueItem.object_attributes.id === event.object_attributes.id);
+    const isInQueue = queue.some((queueItem) => queueItem.json.object_attributes.id === event.object_attributes.id);
 
     const renderButton = () => {
         if (!isInQueue && !isQueueItem) {
