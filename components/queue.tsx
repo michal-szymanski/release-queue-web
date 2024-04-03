@@ -5,6 +5,7 @@ import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const Queue = () => {
     const { queueMap } = useMergeRequestsStore();
@@ -59,15 +60,15 @@ const Queue = () => {
     };
 
     return (
-        <div className="overflow-hidden rounded-[0.5rem] bg-background">
+        <div className="h-full overflow-hidden rounded-[0.5rem] bg-background">
             <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
-                <div className="flex flex-col gap-5">
+                <div className="flex h-full flex-col gap-5">
                     <div>
                         <h2 className="text-2xl font-bold tracking-tight">Queue</h2>
                     </div>
-                    <div ref={parentWrapper}>
+                    <div ref={parentWrapper} className="grid h-full flex-grow grid-rows-[auto,1fr] gap-5 overflow-hidden">
                         {renderTabs()}
-                        {renderContent()}
+                        <ScrollArea className="h-full pr-5">{renderContent()}</ScrollArea>
                     </div>
                 </div>
             </div>
