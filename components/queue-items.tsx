@@ -1,4 +1,4 @@
-import QueueItem from '@/components/merge-request';
+import MergeRequest from '@/components/merge-request';
 import { observer } from 'mobx-react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { MergeRequestEvent } from '@/types';
@@ -11,9 +11,9 @@ const QueueItems = ({ queue }: Props) => {
     const [parent] = useAutoAnimate();
 
     return (
-        <div ref={parent} className="flex flex-col gap-2">
+        <div ref={parent} className="flex flex-col gap-2 py-1">
             {queue.map((queueItem) => (
-                <QueueItem key={queueItem.id} event={queueItem.json} isQueueItem={true} />
+                <MergeRequest key={queueItem.id} event={queueItem.json} isQueueItem={true} />
             ))}
         </div>
     );

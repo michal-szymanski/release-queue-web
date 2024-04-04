@@ -48,6 +48,7 @@ const MergeRequest = ({ event, isQueueItem }: Props) => {
                             <a href={event.object_attributes.url}>{event.object_attributes.title}</a>
                             {isQueueItem && <Badge className="capitalize">{event.object_attributes.state}</Badge>}
                         </div>
+                        {!isQueueItem && <CardDescription>{event.repository.name}</CardDescription>}
                         <CardDescription>Last update: {dayjs(event.object_attributes.updated_at).fromNow()}</CardDescription>
                     </div>
                     {renderButton()}
