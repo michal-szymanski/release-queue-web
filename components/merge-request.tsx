@@ -17,26 +17,22 @@ type Props = {
 };
 
 const MergeRequest = ({ event, isQueueItem }: Props) => {
-    const { queue, addToQueue, removeFromQueue } = useMergeRequestsStore();
-    const isInQueue = queue.some((queueItem) => queueItem.json.object_attributes.id === event.object_attributes.id);
+    const { addToQueue, removeFromQueue } = useMergeRequestsStore();
 
     const renderButton = () => {
-        if (!isInQueue && !isQueueItem) {
+        if (isQueueItem) {
             return (
-                <Button type="button" onClick={() => addToQueue(event)}>
-                    Add to queue
-                </Button>
-            );
-        }
-        if (isInQueue && isQueueItem) {
-            return (
-                <Button type="button" onClick={() => removeFromQueue(event)}>
-                    Remove from queue
+                <Button type="button" size="sm" onClick={() => removeFromQueue(event)}>
+                    Remove
                 </Button>
             );
         }
 
-        return null;
+        return (
+            <Button type="button" size="sm" onClick={() => addToQueue(event)}>
+                Add
+            </Button>
+        );
     };
 
     return (

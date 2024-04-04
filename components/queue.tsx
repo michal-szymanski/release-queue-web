@@ -8,34 +8,30 @@ import { clsx } from 'clsx';
 import MergeRequestList from '@/components/merge-request-list';
 
 const Queue = () => {
-    const { queueMap } = useMergeRequestsStore();
+    const { queueMap, queueKeys } = useMergeRequestsStore();
     const [parent] = useAutoAnimate();
     const [activeRepository, setActiveRepository] = useState('');
 
     useEffect(() => {
-        const keys = Array.from(queueMap.keys());
+        if (!queueKeys.length) return;
 
-        if (!keys.length) return;
-
-        const firstRepository = keys[0];
+        const firstRepository = queueKeys[0];
 
         if (!activeRepository || !queueMap.get(activeRepository)) {
             setActiveRepository(firstRepository);
         }
-    }, [activeRepository, queueMap]);
+    }, [activeRepository, queueMap, queueKeys]);
 
     const renderTabs = () => {
-        const keys = Array.from(queueMap.keys());
-
         return (
             <div className="h-9">
                 <div
                     className={clsx('inline-block h-full rounded-lg bg-muted p-1 text-muted-foreground opacity-0 transition-opacity', {
-                        'opacity-100': keys.length > 0
+                        'opacity-100': queueKeys.length > 0
                     })}
                 >
                     <div ref={parent}>
-                        {keys.map((key) => (
+                        {queueKeys.map((key) => (
                             <div key={key} className="inline-block">
                                 <Button
                                     className={cn(

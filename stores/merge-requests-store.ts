@@ -5,19 +5,19 @@ import { z } from 'zod';
 
 export class MergeRequestsStore {
     mergeRequestEvents: MergeRequestEvent[] = [];
-    queue: { id: number; json: MergeRequestEvent }[] = [];
     private socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
+    queueMap: Map<string, { id: number; json: MergeRequestEvent }[]> = new Map();
 
     constructor() {
-        makeObservable<MergeRequestsStore, 'socket' | 'setEvents' | 'setQueue'>(this, {
+        makeObservable<MergeRequestsStore, 'socket' | 'setEvents' | 'updateQueueMap'>(this, {
             mergeRequestEvents: observable,
-            queue: observable,
+            queueMap: observable,
             socket: observable,
             setEvents: action,
-            setQueue: action,
             addToQueue: action,
             removeFromQueue: action,
-            queueMap: computed
+            updateQueueMap: action,
+            queueKeys: computed
         });
 
         this.addToQueue = this.addToQueue.bind(this);
@@ -42,7 +42,7 @@ export class MergeRequestsStore {
 
         this.socket.on('queue', (payload) => {
             const queueItems = z.array(z.object({ id: z.number(), json: mergeRequestEventSchema })).parse(payload);
-            this.setQueue(queueItems);
+            this.updateQueueMap(queueItems);
         });
     }
 
@@ -50,8 +50,18 @@ export class MergeRequestsStore {
         this.mergeRequestEvents = [...events];
     }
 
-    private setQueue(events: { id: number; json: MergeRequestEvent }[]) {
-        this.queue = [...events];
+    private updateQueueMap(queueItems: { id: number; json: MergeRequestEvent }[]) {
+        const repositoriesInQueue = Array.from(new Set(queueItems.map((queueItem) => queueItem.json.repository.name)));
+        const keysToRemove = [...this.queueKeys].filter((key) => !repositoriesInQueue.includes(key));
+
+        for (const key of keysToRemove) {
+            this.queueMap.delete(key);
+        }
+
+        for (const repositoryName of repositoriesInQueue) {
+            const queue = queueItems.filter((queueItem) => queueItem.json.repository.name === repositoryName);
+            this.queueMap.set(repositoryName, queue);
+        }
     }
 
     addToQueue(event: MergeRequestEvent) {
@@ -62,13 +72,7 @@ export class MergeRequestsStore {
         this.socket.emit('remove-from-queue', event.object_attributes.id);
     }
 
-    get queueMap() {
-        const map = new Map<string, { id: number; json: MergeRequestEvent }[]>();
-        const uniqueRepositoryNames = Array.from(new Set(this.queue.map((queueItem) => queueItem.json.repository.name)));
-        for (const repositoryName of uniqueRepositoryNames) {
-            const queueGroup = this.queue.filter((queueItem) => queueItem.json.repository.name === repositoryName).sort((a, b) => a.id - b.id);
-            map.set(repositoryName, queueGroup);
-        }
-        return map;
+    get queueKeys() {
+        return Array.from(this.queueMap.keys());
     }
 }
