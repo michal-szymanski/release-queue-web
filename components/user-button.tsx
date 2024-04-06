@@ -13,6 +13,7 @@ import {
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { signOut } from 'next-auth/react';
+import { LogOut } from 'lucide-react';
 
 type Props = {
     session: Session | null;
@@ -38,8 +39,9 @@ const UserButton = ({ session }: Props) => {
                     <div className="text-xs text-muted-foreground">{email}</div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" onClick={() => signOut()}>
-                    Sign Out
+                <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => signOut()}>
+                    <LogOut className="size-4" />
+                    <span>Sign Out</span>
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
