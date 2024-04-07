@@ -1,5 +1,6 @@
 import NextAuth, { AuthOptions } from 'next-auth';
 import GitlabProvider from 'next-auth/providers/gitlab';
+import { z } from 'zod';
 
 export const authOptions: AuthOptions = {
     pages: {
@@ -16,7 +17,13 @@ export const authOptions: AuthOptions = {
             token: `${process.env.GITLAB_URL}/oauth/token`,
             userinfo: `${process.env.GITLAB_URL}/api/v4/user`
         })
-    ]
+    ],
+    callbacks: {
+        session({ session, token }) {
+            session.user.id = z.coerce.number().positive().parse(token.sub);
+            return session;
+        }
+    }
 };
 
 const handler = NextAuth(authOptions);

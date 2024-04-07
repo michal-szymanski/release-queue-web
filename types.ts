@@ -119,3 +119,12 @@ export const mergeRequestEventSchema = z.object({
 });
 
 export type MergeRequestEvent = z.infer<typeof mergeRequestEventSchema>;
+
+export const userSchema = z.object({
+    id: z.number(),
+    name: z.string(),
+    email: z.string(),
+    image: z.string()
+});
+
+export type User = z.infer<typeof userSchema>;

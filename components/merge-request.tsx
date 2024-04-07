@@ -14,12 +14,15 @@ dayjs.extend(relativeTime);
 type Props = {
     event: MergeRequestEvent;
     isQueueItem: boolean;
+    isUserAuthor: boolean;
 };
 
-const MergeRequest = ({ event, isQueueItem }: Props) => {
+const MergeRequest = ({ event, isQueueItem, isUserAuthor }: Props) => {
     const { addToQueue, removeFromQueue } = useMergeRequestsStore();
 
     const renderButton = () => {
+        if (!isUserAuthor) return null;
+
         if (isQueueItem) {
             return (
                 <Button type="button" size="sm" onClick={() => removeFromQueue(event)}>
