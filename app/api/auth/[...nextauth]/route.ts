@@ -1,7 +1,10 @@
-import NextAuth from 'next-auth';
+import NextAuth, { AuthOptions } from 'next-auth';
 import GitlabProvider from 'next-auth/providers/gitlab';
 
-const handler = NextAuth({
+export const authOptions: AuthOptions = {
+    pages: {
+        signIn: '/auth/signin'
+    },
     providers: [
         GitlabProvider({
             clientId: process.env.GITLAB_CLIENT_ID ?? '',
@@ -14,6 +17,8 @@ const handler = NextAuth({
             userinfo: `${process.env.GITLAB_URL}/api/v4/user`
         })
     ]
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
