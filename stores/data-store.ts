@@ -3,7 +3,7 @@ import { action, computed, makeObservable, observable } from 'mobx';
 import { io } from 'socket.io-client';
 import { z } from 'zod';
 
-export class MergeRequestsStore {
+export class DataStore {
     mergeRequestEvents: MergeRequestEvent[] = [];
     private socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`, {
         withCredentials: true
@@ -11,7 +11,7 @@ export class MergeRequestsStore {
     queueMap: Map<string, { id: number; json: MergeRequestEvent }[]> = new Map();
 
     constructor() {
-        makeObservable<MergeRequestsStore, 'socket' | 'setEvents' | 'updateQueueMap'>(this, {
+        makeObservable<DataStore, 'socket' | 'setEvents' | 'updateQueueMap'>(this, {
             mergeRequestEvents: observable,
             queueMap: observable,
             socket: observable,

@@ -1,17 +1,17 @@
 'use client';
 
 import { useContext } from 'react';
-import { MergeRequestsContext } from '@/contexts';
-import { MergeRequestsStore } from '@/stores/merge-requests-store';
+import { DataContext } from '@/contexts';
+import { DataStore } from '@/stores/data-store';
 import { useSession } from 'next-auth/react';
 import { User, userSchema } from '@/types';
 
-export const useMergeRequestsStore = (): MergeRequestsStore => {
-    const mergeRequestsStore = useContext(MergeRequestsContext);
+export const useDataStore = (): DataStore => {
+    const dataStore = useContext(DataContext);
 
-    if (!mergeRequestsStore) throw Error('MergeRequestsStore is not available.');
+    if (!dataStore) throw Error('DataStore is not available.');
 
-    return mergeRequestsStore;
+    return dataStore;
 };
 
 export const useUser = (): User | null => {

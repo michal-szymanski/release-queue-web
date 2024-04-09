@@ -1,9 +1,9 @@
 import MergeRequestList from '@/components/merge-request-list';
-import { useMergeRequestsStore } from '@/hooks';
+import { useDataStore } from '@/hooks';
 import { observer } from 'mobx-react';
 
 export const MergeRequests = () => {
-    const { mergeRequestEvents } = useMergeRequestsStore();
+    const { mergeRequestEvents } = useDataStore();
     return (
         <div className="h-full overflow-hidden rounded-[0.5rem] border bg-background shadow-md md:shadow-xl">
             <div className="flex h-full flex-1 flex-col space-y-8 p-8">

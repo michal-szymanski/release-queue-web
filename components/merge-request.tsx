@@ -7,7 +7,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { observer } from 'mobx-react';
-import { useMergeRequestsStore } from '@/hooks';
+import { useDataStore } from '@/hooks';
 import { Button } from '@/components/ui/button';
 import { Minus, Plus } from 'lucide-react';
 dayjs.extend(relativeTime);
@@ -19,7 +19,7 @@ type Props = {
 };
 
 const MergeRequest = ({ event, isQueueItem, isUserAuthor }: Props) => {
-    const { addToQueue, removeFromQueue } = useMergeRequestsStore();
+    const { addToQueue, removeFromQueue } = useDataStore();
 
     const renderButton = () => {
         if (!isUserAuthor) return null;

@@ -1,4 +1,4 @@
-import { useMergeRequestsStore } from '@/hooks';
+import { useDataStore } from '@/hooks';
 import { observer } from 'mobx-react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useEffect, useState } from 'react';
@@ -8,7 +8,7 @@ import { clsx } from 'clsx';
 import MergeRequestList from '@/components/merge-request-list';
 
 const Queue = () => {
-    const { queueMap, queueKeys } = useMergeRequestsStore();
+    const { queueMap, queueKeys } = useDataStore();
     const [parent] = useAutoAnimate();
     const [activeRepository, setActiveRepository] = useState('');
 

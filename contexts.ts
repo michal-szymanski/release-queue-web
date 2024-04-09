@@ -1,4 +1,4 @@
 import { createContext } from 'react/';
-import { MergeRequestsStore } from '@/stores/merge-requests-store';
+import { DataStore } from '@/stores/data-store';
 
-export const MergeRequestsContext = createContext<InstanceType<typeof MergeRequestsStore> | null>(null);
+export const DataContext = createContext<InstanceType<typeof DataStore> | null>(null);
