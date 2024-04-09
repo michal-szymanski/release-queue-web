@@ -19,7 +19,7 @@ export const authOptions: AuthOptions = {
         })
     ],
     callbacks: {
-        session({ session, token }) {
+        async session({ session, token }) {
             session.user.id = z.coerce.number().positive().parse(token.sub);
             return session;
         }

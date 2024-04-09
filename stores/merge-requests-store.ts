@@ -5,7 +5,9 @@ import { z } from 'zod';
 
 export class MergeRequestsStore {
     mergeRequestEvents: MergeRequestEvent[] = [];
-    private socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
+    private socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`, {
+        withCredentials: true
+    });
     queueMap: Map<string, { id: number; json: MergeRequestEvent }[]> = new Map();
 
     constructor() {
