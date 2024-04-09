@@ -10,6 +10,7 @@ import { observer } from 'mobx-react';
 import { useDataStore } from '@/hooks';
 import { Button } from '@/components/ui/button';
 import { Minus, Plus } from 'lucide-react';
+import PipelineStageIcon from '@/components/pipeline-stage-icon';
 dayjs.extend(relativeTime);
 
 type Props = {
@@ -19,7 +20,8 @@ type Props = {
 };
 
 const MergeRequest = ({ event, isQueueItem, isUserAuthor }: Props) => {
-    const { addToQueue, removeFromQueue } = useDataStore();
+    const { addToQueue, removeFromQueue, pipelines } = useDataStore();
+    const pipeline = pipelines.find((p) => p.commit.id === event.object_attributes.last_commit.id);
 
     const renderButton = () => {
         if (!isUserAuthor) return null;
@@ -52,6 +54,14 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor }: Props) => {
                         </div>
                         {!isQueueItem && <CardDescription>{event.repository.name}</CardDescription>}
                         <CardDescription>Last update: {dayjs(event.object_attributes.updated_at).fromNow()}</CardDescription>
+                        {pipeline && (
+                            <div className="inline-flex gap-1">
+                                {pipeline.object_attributes.stages.map((stage) => {
+                                    const build = pipeline.builds.find((b) => b.stage === stage);
+                                    return <PipelineStageIcon key={stage} build={build} />;
+                                })}
+                            </div>
+                        )}
                     </div>
                     {renderButton()}
                 </CardTitle>

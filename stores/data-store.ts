@@ -1,4 +1,4 @@
-import { MergeRequestEvent, mergeRequestEventSchema } from '@/types';
+import { MergeRequestEvent, mergeRequestEventSchema, PipelineEvent, pipelineEventSchema } from '@/types';
 import { action, computed, makeObservable, observable } from 'mobx';
 import { io } from 'socket.io-client';
 import { z } from 'zod';
@@ -9,17 +9,20 @@ export class DataStore {
         withCredentials: true
     });
     queueMap: Map<string, { id: number; json: MergeRequestEvent }[]> = new Map();
+    pipelines: PipelineEvent[] = [];
 
     constructor() {
-        makeObservable<DataStore, 'socket' | 'setEvents' | 'updateQueueMap'>(this, {
+        makeObservable<DataStore, 'socket' | 'setMergeRequests' | 'updateQueueMap' | 'setPipelines'>(this, {
             mergeRequestEvents: observable,
             queueMap: observable,
             socket: observable,
-            setEvents: action,
+            setMergeRequests: action,
             addToQueue: action,
             removeFromQueue: action,
             updateQueueMap: action,
-            queueKeys: computed
+            queueKeys: computed,
+            pipelines: observable,
+            setPipelines: action
         });
 
         this.addToQueue = this.addToQueue.bind(this);
@@ -39,16 +42,21 @@ export class DataStore {
 
         this.socket.on('merge-requests', (payload) => {
             const events = z.array(mergeRequestEventSchema).parse(payload);
-            this.setEvents(events);
+            this.setMergeRequests(events);
         });
 
         this.socket.on('queue', (payload) => {
             const queueItems = z.array(z.object({ id: z.number(), json: mergeRequestEventSchema })).parse(payload);
             this.updateQueueMap(queueItems);
         });
+
+        this.socket.on('pipelines', (payload) => {
+            const events = z.array(pipelineEventSchema).parse(payload);
+            this.setPipelines(events);
+        });
     }
 
-    private setEvents(events: MergeRequestEvent[]) {
+    private setMergeRequests(events: MergeRequestEvent[]) {
         this.mergeRequestEvents = [...events];
     }
 
@@ -64,6 +72,10 @@ export class DataStore {
             const queue = queueItems.filter((queueItem) => queueItem.json.repository.name === repositoryName);
             this.queueMap.set(repositoryName, queue);
         }
+    }
+
+    private setPipelines(events: PipelineEvent[]) {
+        this.pipelines = [...events];
     }
 
     addToQueue(event: MergeRequestEvent) {

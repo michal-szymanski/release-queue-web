@@ -128,3 +128,27 @@ export const userSchema = z.object({
 });
 
 export type User = z.infer<typeof userSchema>;
+
+const pipelineBuildSchema = z.object({
+    id: z.number(),
+    stage: z.string(),
+    status: z.string(),
+    duration: z.number().nullable()
+});
+
+export type PipelineBuild = z.infer<typeof pipelineBuildSchema>;
+
+export const pipelineEventSchema = z.object({
+    object_kind: z.literal('pipeline'),
+    object_attributes: z.object({
+        id: z.number(),
+        detailed_status: z.string(),
+        stages: z.array(z.string())
+    }),
+    commit: z.object({
+        id: z.string()
+    }),
+    builds: z.array(pipelineBuildSchema)
+});
+
+export type PipelineEvent = z.infer<typeof pipelineEventSchema>;
