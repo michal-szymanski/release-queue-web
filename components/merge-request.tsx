@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { observer } from 'mobx-react';
 import { useMergeRequestsStore } from '@/hooks';
 import { Button } from '@/components/ui/button';
+import { Minus, Plus } from 'lucide-react';
 dayjs.extend(relativeTime);
 
 type Props = {
@@ -25,15 +26,17 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor }: Props) => {
 
         if (isQueueItem) {
             return (
-                <Button type="button" size="sm" onClick={() => removeFromQueue(event)}>
-                    Remove
+                <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => removeFromQueue(event)}>
+                    <Minus className="size-5" />
+                    <span className="sr-only">Remove from queue</span>
                 </Button>
             );
         }
 
         return (
-            <Button type="button" size="sm" onClick={() => addToQueue(event)}>
-                Add
+            <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => addToQueue(event)}>
+                <Plus className="size-5" />
+                <span className="sr-only">Add to queue</span>
             </Button>
         );
     };
