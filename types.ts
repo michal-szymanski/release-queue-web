@@ -132,7 +132,8 @@ export const pipelineEventSchema = z.object({
     object_attributes: z.object({
         id: z.number(),
         detailed_status: z.string(),
-        stages: z.array(z.string())
+        stages: z.array(z.string()),
+        url: z.string().url()
     }),
     commit: z.object({
         id: z.string()

@@ -3,7 +3,7 @@ import { Circle, CircleArrowRight, CircleCheck, CirclePause, CircleX, LoaderCirc
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Props = {
-    job?: JobEvent;
+    job: JobEvent;
 };
 
 const renderIcon = (job: JobEvent) => {
@@ -26,15 +26,13 @@ const renderIcon = (job: JobEvent) => {
 };
 
 const PipelineStageIcon = ({ job }: Props) => {
-    if (!job) return null;
-
     return (
-        <TooltipProvider delayDuration={0}>
+        <TooltipProvider delayDuration={0} disableHoverableContent>
             <Tooltip>
                 <TooltipTrigger className="cursor-pointer" asChild>
                     {renderIcon(job)}
                 </TooltipTrigger>
-                <TooltipContent>{`${job.build_stage}: ${job.build_status}`}</TooltipContent>
+                <TooltipContent className="pointer-events-none">{`${job.build_stage}: ${job.build_status}`}</TooltipContent>
             </Tooltip>
         </TooltipProvider>
     );
