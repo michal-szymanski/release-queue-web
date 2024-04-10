@@ -1,13 +1,21 @@
-import { PipelineBuild } from '@/types';
-import { CircleArrowRight, CircleX } from 'lucide-react';
+import { JobEvent } from '@/types';
+import { Circle, CircleArrowRight, CircleCheck, CirclePause, CircleX, LoaderCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Props = {
-    build?: PipelineBuild;
+    job?: JobEvent;
 };
 
-const renderIcon = (build: PipelineBuild) => {
-    switch (build.status) {
+const renderIcon = (job: JobEvent) => {
+    switch (job.build_status) {
+        case 'created':
+            return <Circle className="text-muted" />;
+        case 'pending':
+            return <CirclePause className="text-yellow-500" />;
+        case 'running':
+            return <LoaderCircle className="animate-spin-slow text-blue-500" />;
+        case 'success':
+            return <CircleCheck className="text-green-500" />;
         case 'failed':
             return <CircleX className="text-red-500" />;
         case 'skipped':
@@ -17,16 +25,16 @@ const renderIcon = (build: PipelineBuild) => {
     }
 };
 
-const PipelineStageIcon = ({ build }: Props) => {
-    if (!build) return null;
+const PipelineStageIcon = ({ job }: Props) => {
+    if (!job) return null;
 
     return (
         <TooltipProvider delayDuration={0}>
             <Tooltip>
                 <TooltipTrigger className="cursor-pointer" asChild>
-                    {renderIcon(build)}
+                    {renderIcon(job)}
                 </TooltipTrigger>
-                <TooltipContent>{`${build.stage}: ${build.status}`}</TooltipContent>
+                <TooltipContent>{`${job.build_stage}: ${job.build_status}`}</TooltipContent>
             </Tooltip>
         </TooltipProvider>
     );

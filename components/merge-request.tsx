@@ -20,8 +20,8 @@ type Props = {
 };
 
 const MergeRequest = ({ event, isQueueItem, isUserAuthor }: Props) => {
-    const { addToQueue, removeFromQueue, pipelines } = useDataStore();
-    const pipeline = pipelines.find((p) => p.commit.id === event.object_attributes.last_commit.id);
+    const { addToQueue, removeFromQueue, pipelineEvents, jobEvents } = useDataStore();
+    const pipeline = pipelineEvents.find((p) => p.commit.id === event.object_attributes.last_commit.id);
 
     const renderButton = () => {
         if (!isUserAuthor) return null;
@@ -49,7 +49,9 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor }: Props) => {
                 <CardTitle className="flex items-start justify-between">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-end gap-2">
-                            <a href={event.object_attributes.url}>{event.object_attributes.title}</a>
+                            <a href={event.object_attributes.url} target="_blank" rel="noopener noreferrer">
+                                {event.object_attributes.title}
+                            </a>
                             {isQueueItem && <Badge className="capitalize">{event.object_attributes.state}</Badge>}
                         </div>
                         {!isQueueItem && <CardDescription>{event.repository.name}</CardDescription>}
@@ -57,8 +59,8 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor }: Props) => {
                         {pipeline && (
                             <div className="inline-flex gap-1">
                                 {pipeline.object_attributes.stages.map((stage) => {
-                                    const build = pipeline.builds.find((b) => b.stage === stage);
-                                    return <PipelineStageIcon key={stage} build={build} />;
+                                    const job = jobEvents.find((j) => j.pipeline_id === pipeline.object_attributes.id && j.build_stage === stage);
+                                    return <PipelineStageIcon key={stage} job={job} />;
                                 })}
                             </div>
                         )}

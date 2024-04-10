@@ -2,10 +2,6 @@ import { z } from 'zod';
 
 export const objectKindSchema = z.enum(['merge_request', 'pipeline', 'deployment', 'build']);
 
-export const gitlabWebhookEvent = z.object({
-    object_kind: objectKindSchema
-});
-
 const location = z.object({
     avatar_url: z.string().nullable(),
     ci_config_path: z.string().nullable(),
@@ -129,14 +125,7 @@ export const userSchema = z.object({
 
 export type User = z.infer<typeof userSchema>;
 
-const pipelineBuildSchema = z.object({
-    id: z.number(),
-    stage: z.string(),
-    status: z.string(),
-    duration: z.number().nullable()
-});
-
-export type PipelineBuild = z.infer<typeof pipelineBuildSchema>;
+const pipelineBuildStatusSchema = z.enum(['created', 'pending', 'running', 'success', 'failed', 'skipped']);
 
 export const pipelineEventSchema = z.object({
     object_kind: z.literal('pipeline'),
@@ -147,8 +136,15 @@ export const pipelineEventSchema = z.object({
     }),
     commit: z.object({
         id: z.string()
-    }),
-    builds: z.array(pipelineBuildSchema)
+    })
 });
 
 export type PipelineEvent = z.infer<typeof pipelineEventSchema>;
+
+export const jobEventSchema = z.object({
+    pipeline_id: z.number(),
+    build_stage: z.string(),
+    build_status: pipelineBuildStatusSchema
+});
+
+export type JobEvent = z.infer<typeof jobEventSchema>;

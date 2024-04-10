@@ -1,18 +1,21 @@
-import { MergeRequestEvent, mergeRequestEventSchema, PipelineEvent, pipelineEventSchema } from '@/types';
+import { JobEvent, jobEventSchema, MergeRequestEvent, mergeRequestEventSchema, PipelineEvent, pipelineEventSchema } from '@/types';
 import { action, computed, makeObservable, observable } from 'mobx';
 import { io } from 'socket.io-client';
 import { z } from 'zod';
 
 export class DataStore {
-    mergeRequestEvents: MergeRequestEvent[] = [];
     private socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`, {
         withCredentials: true
     });
+    mergeRequestEvents: MergeRequestEvent[] = [];
+    pipelineEvents: PipelineEvent[] = [];
+    jobEvents: JobEvent[] = [];
     queueMap: Map<string, { id: number; json: MergeRequestEvent }[]> = new Map();
-    pipelines: PipelineEvent[] = [];
 
     constructor() {
-        makeObservable<DataStore, 'socket' | 'setMergeRequests' | 'updateQueueMap' | 'setPipelines'>(this, {
+        type PrivateMembers = 'socket' | 'setMergeRequests' | 'updateQueueMap' | 'setPipelines' | 'setJobs';
+
+        makeObservable<DataStore, PrivateMembers>(this, {
             mergeRequestEvents: observable,
             queueMap: observable,
             socket: observable,
@@ -21,8 +24,10 @@ export class DataStore {
             removeFromQueue: action,
             updateQueueMap: action,
             queueKeys: computed,
-            pipelines: observable,
-            setPipelines: action
+            pipelineEvents: observable,
+            setPipelines: action,
+            jobEvents: observable,
+            setJobs: action
         });
 
         this.addToQueue = this.addToQueue.bind(this);
@@ -54,10 +59,17 @@ export class DataStore {
             const events = z.array(pipelineEventSchema).parse(payload);
             this.setPipelines(events);
         });
+
+        this.socket.on('jobs', (payload) => {
+            const events = z.array(jobEventSchema).parse(payload);
+            this.setJobs(events);
+        });
     }
 
     private setMergeRequests(events: MergeRequestEvent[]) {
-        this.mergeRequestEvents = [...events];
+        this.mergeRequestEvents = [...events].sort(
+            (a, b) => new Date(b.object_attributes.updated_at).getTime() - new Date(a.object_attributes.updated_at).getTime()
+        );
     }
 
     private updateQueueMap(queueItems: { id: number; json: MergeRequestEvent }[]) {
@@ -75,7 +87,11 @@ export class DataStore {
     }
 
     private setPipelines(events: PipelineEvent[]) {
-        this.pipelines = [...events];
+        this.pipelineEvents = [...events];
+    }
+
+    private setJobs(events: JobEvent[]) {
+        this.jobEvents = [...events];
     }
 
     addToQueue(event: MergeRequestEvent) {
