@@ -21,7 +21,9 @@ type Props = {
 
 const MergeRequest = ({ event, isQueueItem, isUserAuthor }: Props) => {
     const { addToQueue, removeFromQueue, pipelineEvents, jobEvents } = useDataStore();
-    const pipeline = pipelineEvents.find((p) => p.commit.id === event.object_attributes.last_commit.id);
+    const pipeline = pipelineEvents.find(
+        (p) => p.commit.id === event.object_attributes.last_commit.id || p.commit.id === event.object_attributes.merge_commit_sha
+    );
 
     const renderButton = () => {
         if (!isUserAuthor) return null;

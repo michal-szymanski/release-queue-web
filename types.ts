@@ -69,7 +69,7 @@ export const mergeRequestEventSchema = z.object({
         }),
         last_edited_at: z.string().nullable(),
         last_edited_by_id: z.unknown().nullable(),
-        merge_commit_sha: z.unknown().nullable(),
+        merge_commit_sha: z.string().nullable(),
         merge_error: z.unknown().nullable(),
         merge_params: z.object({
             force_remove_source_branch: z.string()
