@@ -88,10 +88,12 @@ export class DataStore {
 
     private setPipelines(events: PipelineEvent[]) {
         this.pipelineEvents = [...events];
+        console.log('pipelines', events);
     }
 
     private setJobs(events: JobEvent[]) {
         this.jobEvents = [...events];
+        console.log('jobs', events);
     }
 
     addToQueue(event: MergeRequestEvent) {

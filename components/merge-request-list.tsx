@@ -16,14 +16,19 @@ const MergeRequestList = ({ data, isQueue }: Props) => {
     return (
         <ScrollArea className="h-full pr-5">
             <div ref={parent} className="flex flex-col gap-2 py-1">
-                {data.map((event) => (
-                    <MergeRequest
-                        key={event.object_attributes.id}
-                        event={event}
-                        isQueueItem={isQueue}
-                        isUserAuthor={user !== null && user.id === event.user.id}
-                    />
-                ))}
+                {data.map((event, i) => {
+                    const isUserAuthor = user !== null && user.id === event.user.id;
+                    const isPipelineVisible = isUserAuthor || (isQueue && i === 0);
+                    return (
+                        <MergeRequest
+                            key={event.object_attributes.id}
+                            event={event}
+                            isQueueItem={isQueue}
+                            isUserAuthor={isUserAuthor}
+                            isPipelineVisible={isPipelineVisible}
+                        />
+                    );
+                })}
             </div>
         </ScrollArea>
     );

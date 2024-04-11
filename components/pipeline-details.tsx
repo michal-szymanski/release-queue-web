@@ -1,6 +1,7 @@
 import PipelineStageIcon from '@/components/pipeline-stage-icon';
 import { MergeRequestEvent } from '@/types';
 import { useDataStore } from '@/hooks';
+import { observer } from 'mobx-react';
 
 type Props = {
     event: MergeRequestEvent;
@@ -30,4 +31,4 @@ const PipelineDetails = ({ event }: Props) => {
     );
 };
 
-export default PipelineDetails;
+export default observer(PipelineDetails);

@@ -17,9 +17,10 @@ type Props = {
     event: MergeRequestEvent;
     isQueueItem: boolean;
     isUserAuthor: boolean;
+    isPipelineVisible: boolean;
 };
 
-const MergeRequest = ({ event, isQueueItem, isUserAuthor }: Props) => {
+const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible }: Props) => {
     const { addToQueue, removeFromQueue } = useDataStore();
 
     const renderButton = () => {
@@ -55,7 +56,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor }: Props) => {
                         </div>
                         {!isQueueItem && <CardDescription>{event.repository.name}</CardDescription>}
                         <CardDescription>Last update: {dayjs(event.object_attributes.updated_at).fromNow()}</CardDescription>
-                        <PipelineDetails event={event} />
+                        {isPipelineVisible && <PipelineDetails event={event} />}
                     </div>
                     {renderButton()}
                 </CardTitle>
