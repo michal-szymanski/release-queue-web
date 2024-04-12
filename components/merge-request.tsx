@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { observer } from 'mobx-react';
 import { useDataStore } from '@/hooks';
 import { Button } from '@/components/ui/button';
-import { Minus, Plus } from 'lucide-react';
+import { ArrowDown, Minus, Plus } from 'lucide-react';
 import PipelineDetails from '@/components/pipeline-details';
 dayjs.extend(relativeTime);
 
@@ -18,25 +18,34 @@ type Props = {
     isQueueItem: boolean;
     isUserAuthor: boolean;
     isPipelineVisible: boolean;
+    canStepBack: boolean;
 };
 
-const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible }: Props) => {
-    const { addToQueue, removeFromQueue } = useDataStore();
+const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, canStepBack }: Props) => {
+    const { addToQueue, removeFromQueue, stepBackInQueue } = useDataStore();
 
     const renderButton = () => {
         if (!isUserAuthor) return null;
 
         if (isQueueItem) {
             return (
-                <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => removeFromQueue(event)}>
-                    <Minus className="size-5" />
-                    <span className="sr-only">Remove from queue</span>
-                </Button>
+                <>
+                    {canStepBack && (
+                        <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => stepBackInQueue(event)}>
+                            <ArrowDown className="size-5" />
+                            <span className="sr-only">Step back in queue</span>
+                        </Button>
+                    )}
+                    <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => removeFromQueue(event)}>
+                        <Minus className="size-5" />
+                        <span className="sr-only">Remove from queue</span>
+                    </Button>
+                </>
             );
         }
 
         return (
-            <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => addToQueue(event)}>
+            <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => addToQueue(event, new Date().toISOString())}>
                 <Plus className="size-5" />
                 <span className="sr-only">Add to queue</span>
             </Button>
@@ -50,7 +59,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible }: P
                     <div className="flex flex-col gap-2">
                         <div className="flex items-end gap-2">
                             <a href={event.object_attributes.url} target="_blank" rel="noopener noreferrer">
-                                {event.object_attributes.title}
+                                {event.object_attributes.title} ({event.object_attributes.id})
                             </a>
                             {isQueueItem && <Badge className="capitalize">{event.object_attributes.state}</Badge>}
                         </div>
@@ -58,7 +67,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible }: P
                         <CardDescription>Last update: {dayjs(event.object_attributes.updated_at).fromNow()}</CardDescription>
                         {isPipelineVisible && <PipelineDetails event={event} />}
                     </div>
-                    {renderButton()}
+                    <div className="flex gap-2">{renderButton()}</div>
                 </CardTitle>
             </CardHeader>
             {isQueueItem && (

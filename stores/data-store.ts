@@ -27,11 +27,13 @@ export class DataStore {
             pipelineEvents: observable,
             setPipelines: action,
             jobEvents: observable,
-            setJobs: action
+            setJobs: action,
+            stepBackInQueue: action
         });
 
         this.addToQueue = this.addToQueue.bind(this);
         this.removeFromQueue = this.removeFromQueue.bind(this);
+        this.stepBackInQueue = this.stepBackInQueue.bind(this);
 
         this.subscribe();
     }
@@ -96,12 +98,19 @@ export class DataStore {
         console.log('jobs', events);
     }
 
-    addToQueue(event: MergeRequestEvent) {
-        this.socket.emit('add-to-queue', event.object_attributes.id);
+    addToQueue(event: MergeRequestEvent, isoString: string) {
+        this.socket.emit('add-to-queue', {
+            mergeRequestId: event.object_attributes.id,
+            isoString: z.string().datetime().parse(isoString)
+        });
     }
 
     removeFromQueue(event: MergeRequestEvent) {
         this.socket.emit('remove-from-queue', event.object_attributes.id);
+    }
+
+    stepBackInQueue(event: MergeRequestEvent) {
+        this.socket.emit('step-back-in-queue', event.object_attributes.id);
     }
 
     get queueKeys() {

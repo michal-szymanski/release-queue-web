@@ -19,6 +19,7 @@ const MergeRequestList = ({ data, isQueue }: Props) => {
                 {data.map((event, i) => {
                     const isUserAuthor = user !== null && user.id === event.user.id;
                     const isPipelineVisible = isUserAuthor || (isQueue && i === 0);
+                    const canStepBack = isQueue && data.length > 1 && i !== data.length - 1;
                     return (
                         <MergeRequest
                             key={event.object_attributes.id}
@@ -26,6 +27,7 @@ const MergeRequestList = ({ data, isQueue }: Props) => {
                             isQueueItem={isQueue}
                             isUserAuthor={isUserAuthor}
                             isPipelineVisible={isPipelineVisible}
+                            canStepBack={canStepBack}
                         />
                     );
                 })}
