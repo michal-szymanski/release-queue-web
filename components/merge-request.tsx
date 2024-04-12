@@ -11,6 +11,7 @@ import { useDataStore } from '@/hooks';
 import { Button } from '@/components/ui/button';
 import { ArrowDown, Minus, Plus } from 'lucide-react';
 import PipelineDetails from '@/components/pipeline-details';
+import DatePicker from '@/components/date-picker';
 dayjs.extend(relativeTime);
 
 type Props = {
@@ -45,10 +46,13 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
         }
 
         return (
-            <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => addToQueue(event, new Date().toISOString())}>
-                <Plus className="size-5" />
-                <span className="sr-only">Add to queue</span>
-            </Button>
+            <>
+                <DatePicker event={event} />
+                <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => addToQueue(event, new Date().toISOString())}>
+                    <Plus className="size-5" />
+                    <span className="sr-only">Add to queue</span>
+                </Button>
+            </>
         );
     };
 
