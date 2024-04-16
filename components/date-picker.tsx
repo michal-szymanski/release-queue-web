@@ -5,26 +5,28 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { observer } from 'mobx-react';
-import { useDataStore } from '@/hooks';
+import { useStore } from '@/hooks';
 import { MergeRequestEvent } from '@/types';
 import { useState } from 'react';
+import { SelectSingleEventHandler } from 'react-day-picker';
 
 type Props = {
     event: MergeRequestEvent;
 };
 
-const saturday = 6;
-const sunday = 0;
 const monday = 1;
 
 export const DatePicker = ({ event }: Props) => {
-    const { addToQueue } = useDataStore();
+    const {
+        dataStore: { addToQueue }
+    } = useStore();
     const [open, setOpen] = useState(false);
 
-    const handleSelect = (date?: Date) => {
+    const handleSelect: SelectSingleEventHandler = (date) => {
         if (!date) return;
 
-        addToQueue(event, date.toISOString());
+        const localDate = new Date(date.getTime() + (date.getTimezoneOffset() + 240) * 60 * 1000);
+        addToQueue(event, localDate.toISOString());
         setOpen(false);
     };
 
@@ -36,14 +38,7 @@ export const DatePicker = ({ event }: Props) => {
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
-                <Calendar
-                    mode="single"
-                    onSelect={handleSelect}
-                    initialFocus
-                    fromDate={new Date()}
-                    weekStartsOn={monday}
-                    disabled={{ dayOfWeek: [saturday, sunday] }}
-                />
+                <Calendar mode="single" onSelect={handleSelect} initialFocus fromDate={new Date()} weekStartsOn={monday} />
             </PopoverContent>
         </Popover>
     );

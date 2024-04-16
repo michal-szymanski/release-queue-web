@@ -1,4 +1,4 @@
 import { createContext } from 'react/';
-import { DataStore } from '@/stores/data-store';
+import { RootStore } from '@/stores';
 
-export const DataContext = createContext<InstanceType<typeof DataStore> | null>(null);
+export const StoreContext = createContext<InstanceType<typeof RootStore> | null>(null);

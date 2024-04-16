@@ -14,25 +14,23 @@ const MergeRequestList = ({ data, isQueue }: Props) => {
     const user = useUser();
 
     return (
-        <ScrollArea className="h-full pr-5">
-            <div ref={parent} className="flex flex-col gap-2 py-1">
-                {data.map((event, i) => {
-                    const isUserAuthor = user !== null && user.id === event.user.id;
-                    const isPipelineVisible = isUserAuthor || (isQueue && i === 0);
-                    const canStepBack = isQueue && data.length > 1 && i !== data.length - 1;
-                    return (
-                        <MergeRequest
-                            key={event.object_attributes.id}
-                            event={event}
-                            isQueueItem={isQueue}
-                            isUserAuthor={isUserAuthor}
-                            isPipelineVisible={isPipelineVisible}
-                            canStepBack={canStepBack}
-                        />
-                    );
-                })}
-            </div>
-        </ScrollArea>
+        <div ref={parent} className="flex flex-col gap-2 py-1">
+            {data.map((event, i) => {
+                const isUserAuthor = user !== null && user.id === event.user.id;
+                const isPipelineVisible = isUserAuthor || (isQueue && i === 0);
+                const canStepBack = isQueue && data.length > 1 && i !== data.length - 1;
+                return (
+                    <MergeRequest
+                        key={event.object_attributes.id}
+                        event={event}
+                        isQueueItem={isQueue}
+                        isUserAuthor={isUserAuthor}
+                        isPipelineVisible={isPipelineVisible}
+                        canStepBack={canStepBack}
+                    />
+                );
+            })}
+        </div>
     );
 };
 export default MergeRequestList;

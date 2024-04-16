@@ -1,6 +1,6 @@
 import PipelineStageIcon from '@/components/pipeline-stage-icon';
 import { MergeRequestEvent } from '@/types';
-import { useDataStore } from '@/hooks';
+import { useStore } from '@/hooks';
 import { observer } from 'mobx-react';
 
 type Props = {
@@ -8,7 +8,9 @@ type Props = {
 };
 
 const PipelineDetails = ({ event }: Props) => {
-    const { pipelineEvents, jobEvents } = useDataStore();
+    const {
+        dataStore: { pipelineEvents, jobEvents }
+    } = useStore();
     const pipeline = pipelineEvents.find(
         (p) => p.commit.id === event.object_attributes.last_commit.id || p.commit.id === event.object_attributes.merge_commit_sha
     );

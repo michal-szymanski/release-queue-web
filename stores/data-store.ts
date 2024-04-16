@@ -1,29 +1,28 @@
 import { JobEvent, jobEventSchema, MergeRequestEvent, mergeRequestEventSchema, PipelineEvent, pipelineEventSchema } from '@/types';
-import { action, computed, makeObservable, observable } from 'mobx';
+import { action, makeObservable, observable } from 'mobx';
 import { io } from 'socket.io-client';
 import { z } from 'zod';
 
 export class DataStore {
-    private socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`, {
+    private _socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`, {
         withCredentials: true
     });
     mergeRequestEvents: MergeRequestEvent[] = [];
     pipelineEvents: PipelineEvent[] = [];
     jobEvents: JobEvent[] = [];
-    queueMap: Map<string, { id: number; json: MergeRequestEvent }[]> = new Map();
+    queueMap: Map<string, { id: number; json: MergeRequestEvent; date: string }[]> = new Map();
 
     constructor() {
-        type PrivateMembers = 'socket' | 'setMergeRequests' | 'updateQueueMap' | 'setPipelines' | 'setJobs';
+        type PrivateMembers = '_socket' | 'setMergeRequests' | 'updateQueueMap' | 'setPipelines' | 'setJobs';
 
         makeObservable<DataStore, PrivateMembers>(this, {
             mergeRequestEvents: observable,
             queueMap: observable,
-            socket: observable,
+            _socket: observable,
             setMergeRequests: action,
             addToQueue: action,
             removeFromQueue: action,
             updateQueueMap: action,
-            queueKeys: computed,
             pipelineEvents: observable,
             setPipelines: action,
             jobEvents: observable,
@@ -39,30 +38,30 @@ export class DataStore {
     }
 
     private subscribe() {
-        this.socket.on('connect', () => {
-            console.log(`Client connected. id: ${this.socket.id}`);
+        this._socket.on('connect', () => {
+            console.log(`Client connected. id: ${this._socket.id}`);
         });
 
-        this.socket.on('disconnect', () => {
-            console.log(`Client disconnected. id: ${this.socket.id}`);
+        this._socket.on('disconnect', () => {
+            console.log(`Client disconnected. id: ${this._socket.id}`);
         });
 
-        this.socket.on('merge-requests', (payload) => {
+        this._socket.on('merge-requests', (payload) => {
             const events = z.array(mergeRequestEventSchema).parse(payload);
             this.setMergeRequests(events);
         });
 
-        this.socket.on('queue', (payload) => {
-            const queueItems = z.array(z.object({ id: z.number(), json: mergeRequestEventSchema })).parse(payload);
+        this._socket.on('queue', (payload) => {
+            const queueItems = z.array(z.object({ id: z.number(), json: mergeRequestEventSchema, date: z.string().datetime() })).parse(payload);
             this.updateQueueMap(queueItems);
         });
 
-        this.socket.on('pipelines', (payload) => {
+        this._socket.on('pipelines', (payload) => {
             const events = z.array(pipelineEventSchema).parse(payload);
             this.setPipelines(events);
         });
 
-        this.socket.on('jobs', (payload) => {
+        this._socket.on('jobs', (payload) => {
             const events = z.array(jobEventSchema).parse(payload);
             this.setJobs(events);
         });
@@ -74,9 +73,9 @@ export class DataStore {
         );
     }
 
-    private updateQueueMap(queueItems: { id: number; json: MergeRequestEvent }[]) {
+    private updateQueueMap(queueItems: { id: number; json: MergeRequestEvent; date: string }[]) {
         const repositoriesInQueue = Array.from(new Set(queueItems.map((queueItem) => queueItem.json.repository.name)));
-        const keysToRemove = [...this.queueKeys].filter((key) => !repositoriesInQueue.includes(key));
+        const keysToRemove = Array.from(this.queueMap.keys()).filter((key) => !repositoriesInQueue.includes(key));
 
         for (const key of keysToRemove) {
             this.queueMap.delete(key);
@@ -90,30 +89,28 @@ export class DataStore {
 
     private setPipelines(events: PipelineEvent[]) {
         this.pipelineEvents = [...events];
-        console.log('pipelines', events);
     }
 
     private setJobs(events: JobEvent[]) {
         this.jobEvents = [...events];
-        console.log('jobs', events);
     }
 
     addToQueue(event: MergeRequestEvent, isoString: string) {
-        this.socket.emit('add-to-queue', {
+        this._socket.emit('add-to-queue', {
             mergeRequestId: event.object_attributes.id,
             isoString: z.string().datetime().parse(isoString)
         });
     }
 
     removeFromQueue(event: MergeRequestEvent) {
-        this.socket.emit('remove-from-queue', event.object_attributes.id);
+        this._socket.emit('remove-from-queue', event.object_attributes.id);
     }
 
     stepBackInQueue(event: MergeRequestEvent) {
-        this.socket.emit('step-back-in-queue', event.object_attributes.id);
+        this._socket.emit('step-back-in-queue', event.object_attributes.id);
     }
 
-    get queueKeys() {
-        return Array.from(this.queueMap.keys());
-    }
+    // get queueKeys() {
+    //     return Array.from(this.queueMap.keys());
+    // }
 }

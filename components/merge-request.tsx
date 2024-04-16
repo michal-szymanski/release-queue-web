@@ -7,7 +7,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { observer } from 'mobx-react';
-import { useDataStore } from '@/hooks';
+import { useStore } from '@/hooks';
 import { Button } from '@/components/ui/button';
 import { ArrowDown, Minus, Plus } from 'lucide-react';
 import PipelineDetails from '@/components/pipeline-details';
@@ -23,7 +23,9 @@ type Props = {
 };
 
 const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, canStepBack }: Props) => {
-    const { addToQueue, removeFromQueue, stepBackInQueue } = useDataStore();
+    const {
+        dataStore: { addToQueue, removeFromQueue, stepBackInQueue }
+    } = useStore();
 
     const renderButton = () => {
         if (!isUserAuthor) return null;
@@ -63,7 +65,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                     <div className="flex flex-col gap-2">
                         <div className="flex items-end gap-2">
                             <a href={event.object_attributes.url} target="_blank" rel="noopener noreferrer">
-                                {event.object_attributes.title} ({event.object_attributes.id})
+                                {event.object_attributes.title}
                             </a>
                             {isQueueItem && <Badge className="capitalize">{event.object_attributes.state}</Badge>}
                         </div>

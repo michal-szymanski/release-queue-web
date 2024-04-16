@@ -1,60 +1,42 @@
-import { useDataStore } from '@/hooks';
+import { useStore } from '@/hooks';
 import { observer } from 'mobx-react';
-import { useAutoAnimate } from '@formkit/auto-animate/react';
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { clsx } from 'clsx';
 import MergeRequestList from '@/components/merge-request-list';
+import dayjs from 'dayjs';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import QueueTabs from '@/components/queue-tabs';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 const Queue = () => {
-    const { queueMap, queueKeys } = useDataStore();
+    const {
+        dataStore: { queueMap },
+        uiStore: { activeRepository }
+    } = useStore();
     const [parent] = useAutoAnimate();
-    const [activeRepository, setActiveRepository] = useState('');
 
-    useEffect(() => {
-        if (!queueKeys.length) return;
-
-        const firstRepository = queueKeys[0];
-
-        if (!activeRepository || !queueMap.get(activeRepository)) {
-            setActiveRepository(firstRepository);
-        }
-    }, [activeRepository, queueMap, queueKeys]);
-
-    const renderTabs = () => {
-        return (
-            <div className="h-9">
-                <div
-                    className={clsx('inline-block h-full rounded-lg bg-muted p-1 text-muted-foreground opacity-0 transition-opacity', {
-                        'opacity-100': queueKeys.length > 0
-                    })}
-                >
-                    <div ref={parent}>
-                        {queueKeys.map((key) => (
-                            <div key={key} className="inline-block">
-                                <Button
-                                    className={cn(
-                                        'h-auto items-center justify-center whitespace-nowrap rounded-md bg-transparent px-3 py-1 text-sm font-medium text-zinc-600 ring-offset-background transition-all hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:text-zinc-200',
-                                        {
-                                            'bg-background text-foreground shadow-sm hover:bg-background': key === activeRepository
-                                        }
-                                    )}
-                                    onClick={() => setActiveRepository(key)}
-                                >
-                                    {key}
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
-    };
     const renderContent = () => {
-        const queue = (queueMap.get(activeRepository) ?? []).map((queueItem) => queueItem.json);
+        const queue = activeRepository ? (queueMap.get(activeRepository) ?? []).map(({ json, date }) => ({ json, date })) : [];
+        const groups = Object.groupBy(queue, ({ date }) => date);
+        const today = new Date();
 
-        return <MergeRequestList data={queue} isQueue={true} />;
+        return (
+            <ScrollArea className="h-full pr-5">
+                <div ref={parent} className="flex flex-col gap-12">
+                    {Object.keys(groups).map((date) => (
+                        <div key={`${date}:${activeRepository}`} className="flex flex-col gap-10">
+                            {dayjs(date).isAfter(today) && (
+                                <div className="flex flex-col gap-1 pl-2">
+                                    <div className="text-2xl font-bold">{dayjs(date).format('dddd')}</div>
+                                    <Separator className="w-48" />
+                                    <div className="text-sm text-muted-foreground">{dayjs(date).format('DD-MM-YYYY')}</div>
+                                </div>
+                            )}
+                            <MergeRequestList data={(groups[date] ?? []).map(({ json }) => json)} isQueue={true} />
+                        </div>
+                    ))}
+                </div>
+            </ScrollArea>
+        );
     };
 
     return (
@@ -64,8 +46,8 @@ const Queue = () => {
                     <div>
                         <h2 className="text-2xl font-bold tracking-tight">Queue</h2>
                     </div>
-                    {renderTabs()}
-                    <div className="flex-grow overflow-hidden">{renderContent()}</div>
+                    <QueueTabs />
+                    <div className="flex flex-grow flex-col gap-5 overflow-hidden">{renderContent()}</div>
                 </div>
             </div>
         </div>

@@ -1,17 +1,17 @@
 'use client';
 
 import { useContext } from 'react';
-import { DataContext } from '@/contexts';
-import { DataStore } from '@/stores/data-store';
+import { StoreContext } from '@/contexts';
 import { useSession } from 'next-auth/react';
 import { User, userSchema } from '@/types';
+import { RootStore } from '@/stores';
 
-export const useDataStore = (): DataStore => {
-    const dataStore = useContext(DataContext);
+export const useStore = (): RootStore => {
+    const rootStore = useContext(StoreContext);
 
-    if (!dataStore) throw Error('DataStore is not available.');
+    if (!rootStore) throw Error('RootStore is not available.');
 
-    return dataStore;
+    return rootStore;
 };
 
 export const useUser = (): User | null => {
