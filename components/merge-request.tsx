@@ -59,7 +59,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
     };
 
     return (
-        <Card className="h-56">
+        <Card>
             <CardHeader>
                 <CardTitle className="flex items-start justify-between">
                     <div className="flex flex-col gap-2">

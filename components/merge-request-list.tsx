@@ -1,8 +1,8 @@
 import MergeRequest from '@/components/merge-request';
-import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { MergeRequestEvent } from '@/types';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useUser } from '@/hooks';
+import { AnimatePresence, motion } from 'framer-motion';
+import { variants } from '@/lib/framer-motion';
 
 type Props = {
     data: MergeRequestEvent[];
@@ -10,26 +10,35 @@ type Props = {
 };
 
 const MergeRequestList = ({ data, isQueue }: Props) => {
-    const [parent] = useAutoAnimate();
     const user = useUser();
 
     return (
-        <div ref={parent} className="flex flex-col gap-2 py-1">
-            {data.map((event, i) => {
-                const isUserAuthor = user !== null && user.id === event.user.id;
-                const isPipelineVisible = isUserAuthor || (isQueue && i === 0);
-                const canStepBack = isQueue && data.length > 1 && i !== data.length - 1;
-                return (
-                    <MergeRequest
-                        key={event.object_attributes.id}
-                        event={event}
-                        isQueueItem={isQueue}
-                        isUserAuthor={isUserAuthor}
-                        isPipelineVisible={isPipelineVisible}
-                        canStepBack={canStepBack}
-                    />
-                );
-            })}
+        <div className="flex flex-col gap-2 py-1">
+            <AnimatePresence mode="popLayout">
+                {data.map((event, i) => {
+                    const isUserAuthor = user !== null && user.id === event.user.id;
+                    const isPipelineVisible = isUserAuthor || (isQueue && i === 0);
+                    const canStepBack = isQueue && data.length > 1 && i !== data.length - 1;
+                    return (
+                        <motion.div
+                            key={event.object_attributes.id}
+                            layout="position"
+                            variants={variants}
+                            initial={['hidden', 'size-small']}
+                            animate={['visible', 'size-normal']}
+                            exit={['hidden', 'size-small']}
+                        >
+                            <MergeRequest
+                                event={event}
+                                isQueueItem={isQueue}
+                                isUserAuthor={isUserAuthor}
+                                isPipelineVisible={isPipelineVisible}
+                                canStepBack={canStepBack}
+                            />
+                        </motion.div>
+                    );
+                })}
+            </AnimatePresence>
         </div>
     );
 };

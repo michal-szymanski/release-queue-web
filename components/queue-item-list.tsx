@@ -3,26 +3,8 @@ import { useStore, useUser } from '@/hooks';
 import { observer } from 'mobx-react';
 import dayjs from 'dayjs';
 import { Separator } from '@/components/ui/separator';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
-
-const variants: Variants = {
-    hidden: {
-        opacity: 0,
-        transition: { ease: 'easeInOut', duration: 0.25 }
-    },
-    visible: {
-        opacity: 1,
-        transition: { ease: 'easeInOut', duration: 0.25, delay: 0.25 }
-    },
-    'size-small': {
-        scale: 0.98,
-        transition: { ease: 'easeInOut', duration: 0.25 }
-    },
-    'size-normal': {
-        scale: 1,
-        transition: { ease: 'easeInOut', duration: 0.25, delay: 0.25 }
-    }
-};
+import { motion, AnimatePresence } from 'framer-motion';
+import { variants } from '@/lib/framer-motion';
 
 const QueueItemList = () => {
     const user = useUser();
