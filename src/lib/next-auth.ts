@@ -1,4 +1,4 @@
-import NextAuth, { AuthOptions } from 'next-auth';
+import { AuthOptions } from 'next-auth';
 import GitlabProvider from 'next-auth/providers/gitlab';
 import { z } from 'zod';
 
@@ -25,7 +25,3 @@ export const authOptions: AuthOptions = {
         }
     }
 };
-
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST };

@@ -1,7 +1,7 @@
 import { ThemeDropdown } from '@/components/theme-dropdown';
 import { getServerSession, Session } from 'next-auth';
 import UserButton from '@/components/user-button';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/next-auth';
 
 export const Header = async () => {
     const session: Session | null = await getServerSession(authOptions);

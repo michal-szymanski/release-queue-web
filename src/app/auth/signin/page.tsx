@@ -1,8 +1,8 @@
 import { getProviders } from 'next-auth/react';
 import AuthProviders from '@/components/auth-providers';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/next-auth';
 
 const Page = async () => {
     const session = await getServerSession(authOptions);
