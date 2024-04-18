@@ -18,7 +18,7 @@ const PipelineDetails = ({ event }: Props) => {
     if (!pipeline) return null;
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex h-16 flex-col gap-2">
             <a href={pipeline.object_attributes.url} className="text-sm" target="_blank" rel="noopener noreferrer">
                 Pipeline #{pipeline.object_attributes.id}
             </a>
