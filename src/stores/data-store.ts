@@ -2,9 +2,10 @@ import { JobEvent, jobEventSchema, MergeRequestEvent, mergeRequestEventSchema, P
 import { action, makeObservable, observable } from 'mobx';
 import { io } from 'socket.io-client';
 import { z } from 'zod';
+import { env } from '@/env';
 
 export class DataStore {
-    private _socket: ReturnType<typeof io> = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`, {
+    private _socket: ReturnType<typeof io> = io(env.NEXT_PUBLIC_WEBSOCKET_URL, {
         withCredentials: true
     });
     mergeRequestEvents: MergeRequestEvent[] = [];

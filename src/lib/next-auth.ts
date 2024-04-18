@@ -1,6 +1,7 @@
 import { AuthOptions } from 'next-auth';
 import GitlabProvider from 'next-auth/providers/gitlab';
 import { z } from 'zod';
+import { env } from '@/env';
 
 export const authOptions: AuthOptions = {
     pages: {
@@ -8,14 +9,14 @@ export const authOptions: AuthOptions = {
     },
     providers: [
         GitlabProvider({
-            clientId: process.env.GITLAB_CLIENT_ID ?? '',
-            clientSecret: process.env.GITLAB_CLIENT_SECRET ?? '',
+            clientId: env.GITLAB_CLIENT_ID,
+            clientSecret: env.GITLAB_CLIENT_SECRET,
             authorization: {
-                url: `${process.env.GITLAB_URL}/oauth/authorize`,
+                url: `${env.GITLAB_URL}/oauth/authorize`,
                 params: { scope: 'read_user' }
             },
-            token: `${process.env.GITLAB_URL}/oauth/token`,
-            userinfo: `${process.env.GITLAB_URL}/api/v4/user`
+            token: `${env.GITLAB_URL}/oauth/token`,
+            userinfo: `${env.GITLAB_URL}/api/v4/user`
         })
     ],
     callbacks: {
