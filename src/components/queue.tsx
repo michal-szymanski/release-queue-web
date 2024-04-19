@@ -12,9 +12,7 @@ const Queue = () => {
                     </div>
                     <QueueTabs />
                     <div className="flex flex-grow flex-col gap-5 overflow-hidden">
-                        <ScrollArea className="h-full pr-5">
-                            <QueueItemList />
-                        </ScrollArea>
+                        <QueueItemList />
                     </div>
                 </div>
             </div>

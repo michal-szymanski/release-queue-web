@@ -1,5 +1,5 @@
 import { JobEvent, jobEventSchema, MergeRequestEvent, mergeRequestEventSchema, PipelineEvent, pipelineEventSchema } from '@/types';
-import { action, makeObservable, observable } from 'mobx';
+import { action, computed, makeObservable, observable } from 'mobx';
 import { io } from 'socket.io-client';
 import { z } from 'zod';
 import { env } from '@/env';
@@ -12,9 +12,10 @@ export class DataStore {
     pipelineEvents: PipelineEvent[] = [];
     jobEvents: JobEvent[] = [];
     queueMap: Map<string, { id: number; json: MergeRequestEvent; date: string }[]> = new Map();
+    private _isQueueLoaded = false;
 
     constructor() {
-        type PrivateMembers = '_socket' | 'setMergeRequests' | 'updateQueueMap' | 'setPipelines' | 'setJobs';
+        type PrivateMembers = '_socket' | 'setMergeRequests' | 'updateQueueMap' | 'setPipelines' | 'setJobs' | 'setIsQueueLoaded' | '_isQueueLoaded';
 
         makeObservable<DataStore, PrivateMembers>(this, {
             mergeRequestEvents: observable,
@@ -28,7 +29,10 @@ export class DataStore {
             setPipelines: action,
             jobEvents: observable,
             setJobs: action,
-            stepBackInQueue: action
+            stepBackInQueue: action,
+            _isQueueLoaded: observable,
+            isQueueEmpty: computed,
+            setIsQueueLoaded: action
         });
 
         this.addToQueue = this.addToQueue.bind(this);
@@ -54,6 +58,7 @@ export class DataStore {
 
         this._socket.on('queue', (payload) => {
             const queueItems = z.array(z.object({ id: z.number(), json: mergeRequestEventSchema, date: z.string().datetime() })).parse(payload);
+            this.setIsQueueLoaded();
             this.updateQueueMap(queueItems);
         });
 
@@ -111,7 +116,11 @@ export class DataStore {
         this._socket.emit('step-back-in-queue', event.object_attributes.id);
     }
 
-    // get queueKeys() {
-    //     return Array.from(this.queueMap.keys());
-    // }
+    private setIsQueueLoaded() {
+        this._isQueueLoaded = true;
+    }
+
+    get isQueueEmpty() {
+        return this._isQueueLoaded && this.queueMap.size === 0;
+    }
 }
