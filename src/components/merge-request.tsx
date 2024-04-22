@@ -1,4 +1,4 @@
-import { MergeRequestEvent } from '@/types';
+import { MergeRequestEvent, rebaseResponseSchema } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFallback } from '@radix-ui/react-avatar';
@@ -9,9 +9,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { observer } from 'mobx-react';
 import { useStore } from '@/hooks';
 import { Button } from '@/components/ui/button';
-import { ArrowDown, Minus, Plus } from 'lucide-react';
+import { ArrowDown, CircleAlert, CircleX, Minus, Plus } from 'lucide-react';
 import PipelineDetails from '@/components/pipeline-details';
 import DatePicker from '@/components/date-picker';
+import { useState } from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AnimatePresence, motion } from 'framer-motion';
+import { variants } from '@/lib/framer-motion';
+import MergeRequestBadge from '@/components/merge-request-badge';
 dayjs.extend(relativeTime);
 
 type Props = {
@@ -26,6 +31,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
     const {
         dataStore: { addToQueue, removeFromQueue, stepBackInQueue }
     } = useStore();
+    const [mergeError, setMergeError] = useState<string | null>(null);
 
     const renderButton = () => {
         if (!isUserAuthor) return null;
@@ -43,6 +49,35 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                         <Minus className="size-5" />
                         <span className="sr-only">Remove from queue</span>
                     </Button>
+                    {!mergeError && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={mergeError !== null}
+                            onClick={async () => {
+                                if (mergeError) return;
+
+                                const response = await fetch('/api/gitlab/rebase', {
+                                    method: 'POST',
+                                    body: JSON.stringify({ projectId: event.project.id, mergeRequestId: event.object_attributes.iid })
+                                });
+
+                                if (response.ok) {
+                                    const json = await response.json();
+                                    const {
+                                        mergeRequest: { payload }
+                                    } = rebaseResponseSchema.parse(json);
+
+                                    if (payload?.merge_error) {
+                                        setMergeError(payload.merge_error);
+                                    }
+                                }
+                            }}
+                        >
+                            Rebase
+                        </Button>
+                    )}
                 </>
             );
         }
@@ -67,7 +102,26 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                             <a href={event.object_attributes.url} target="_blank" rel="noopener noreferrer">
                                 {event.object_attributes.title}
                             </a>
-                            {isQueueItem && <Badge className="capitalize">{event.object_attributes.state}</Badge>}
+                            {isQueueItem && <MergeRequestBadge state={event.object_attributes.state} />}
+                            <AnimatePresence>
+                                {mergeError && (
+                                    <motion.div
+                                        variants={variants}
+                                        initial={['hidden', 'size-small']}
+                                        animate={['visible', 'size-normal']}
+                                        exit={['hidden', 'size-small']}
+                                    >
+                                        <TooltipProvider delayDuration={0} disableHoverableContent>
+                                            <Tooltip>
+                                                <TooltipTrigger className="cursor-pointer" asChild>
+                                                    <CircleAlert className="text-red-500" />
+                                                </TooltipTrigger>
+                                                <TooltipContent className="pointer-events-none">{mergeError}</TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                         {!isQueueItem && <CardDescription>{event.repository.name}</CardDescription>}
                         <CardDescription>Last update: {dayjs(event.object_attributes.updated_at).fromNow()}</CardDescription>

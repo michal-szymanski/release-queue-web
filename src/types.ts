@@ -21,6 +21,9 @@ const location = z.object({
     web_url: z.string()
 });
 
+const mergeRequestStatusSchema = z.enum(['opened', 'merged', 'cancelled']);
+export type MergeRequestState = z.infer<typeof mergeRequestStatusSchema>;
+
 export const mergeRequestEventSchema = z.object({
     changes: z.object({
         prepared_at: z
@@ -83,7 +86,7 @@ export const mergeRequestEventSchema = z.object({
         source: location,
         source_branch: z.string(),
         source_project_id: z.number(),
-        state: z.string(),
+        state: mergeRequestStatusSchema,
         state_id: z.number(),
         target: location,
         target_branch: z.string(),
@@ -149,3 +152,30 @@ export const jobEventSchema = z.object({
 });
 
 export type JobEvent = z.infer<typeof jobEventSchema>;
+
+export const rebaseResponseSchema = z.object({
+    rebase: z.object({
+        status: z.number(),
+        payload: z
+            .object({
+                rebase_in_progress: z.boolean(),
+                merge_error: z.string().nullish()
+            })
+            .optional()
+    }),
+    mergeRequest: z.object({
+        status: z.number(),
+        payload: z
+            .object({
+                merge_status: z.string(),
+                detailed_merge_status: z.string(),
+                has_conflicts: z.boolean(),
+                merge_error: z.string().nullable(),
+                rebase_in_progress: z.boolean(),
+                user: z.object({
+                    can_merge: z.boolean()
+                })
+            })
+            .optional()
+    })
+});

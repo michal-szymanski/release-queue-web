@@ -43,7 +43,7 @@ const QueueItemList = () => {
 
                         return (
                             <motion.div
-                                key={event.object_attributes.id}
+                                key={event.object_attributes.iid}
                                 layout="position"
                                 variants={variants}
                                 initial={['hidden', 'size-small']}

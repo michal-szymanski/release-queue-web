@@ -21,7 +21,7 @@ const MergeRequestList = ({ data, isQueue }: Props) => {
                     const canStepBack = isQueue && data.length > 1 && i !== data.length - 1;
                     return (
                         <motion.div
-                            key={event.object_attributes.id}
+                            key={event.object_attributes.iid}
                             layout="position"
                             variants={variants}
                             initial={['hidden', 'size-small']}

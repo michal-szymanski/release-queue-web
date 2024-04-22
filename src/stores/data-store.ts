@@ -103,17 +103,17 @@ export class DataStore {
 
     addToQueue(event: MergeRequestEvent, isoString: string) {
         this._socket.emit('add-to-queue', {
-            mergeRequestId: event.object_attributes.id,
+            mergeRequestId: event.object_attributes.iid,
             isoString: z.string().datetime().parse(isoString)
         });
     }
 
     removeFromQueue(event: MergeRequestEvent) {
-        this._socket.emit('remove-from-queue', event.object_attributes.id);
+        this._socket.emit('remove-from-queue', event.object_attributes.iid);
     }
 
     stepBackInQueue(event: MergeRequestEvent) {
-        this._socket.emit('step-back-in-queue', event.object_attributes.id);
+        this._socket.emit('step-back-in-queue', event.object_attributes.iid);
     }
 
     private setIsQueueLoaded() {
