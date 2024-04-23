@@ -3,18 +3,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/env';
 import { z } from 'zod';
 
-const payloadSchema = z.object({ projectId: z.number(), mergeRequestId: z.number() });
+const payloadSchema = z.object({ projectId: z.number(), mergeRequestIid: z.number() });
 
 export const POST = async (req: NextRequest) => {
     try {
-        const { projectId, mergeRequestId } = payloadSchema.parse(await req.json());
+        const { projectId, mergeRequestIid } = payloadSchema.parse(await req.json());
 
         const token = await getToken({ req });
         if (!token?.access_token) {
             return NextResponse.json('Unauthorized', { status: 401 });
         }
 
-        const rebaseResponse = await fetch(`${env.GITLAB_URL}/api/v4/projects/${projectId}/merge_requests/${mergeRequestId}/rebase`, {
+        const rebaseResponse = await fetch(`${env.GITLAB_URL}/api/v4/projects/${projectId}/merge_requests/${mergeRequestIid}/rebase`, {
             method: 'PUT',
             headers: {
                 Authorization: `Bearer ${token.access_token}`
@@ -22,7 +22,7 @@ export const POST = async (req: NextRequest) => {
         });
 
         const mergeRequestResponse = await fetch(
-            `${env.GITLAB_URL}/api/v4/projects/${projectId}/merge_requests/${mergeRequestId}?include_rebase_in_progress=true`,
+            `${env.GITLAB_URL}/api/v4/projects/${projectId}/merge_requests/${mergeRequestIid}?include_rebase_in_progress=true`,
             {
                 method: 'GET',
                 headers: {

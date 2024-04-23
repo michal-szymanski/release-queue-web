@@ -1,4 +1,4 @@
-import { JobEvent, jobEventSchema, MergeRequestEvent, mergeRequestEventSchema, PipelineEvent, pipelineEventSchema } from '@/types';
+import { JobEvent, jobEventSchema, MergeRequestEvent, mergeRequestEventSchema, PipelineEvent, pipelineEventSchema, rebaseResponseSchema } from '@/types';
 import { action, computed, makeObservable, observable } from 'mobx';
 import { io } from 'socket.io-client';
 import { z } from 'zod';
@@ -8,10 +8,10 @@ export class DataStore {
     private _socket: ReturnType<typeof io> = io(env.NEXT_PUBLIC_WEBSOCKET_URL, {
         withCredentials: true
     });
-    mergeRequestEvents: MergeRequestEvent[] = [];
+    mergeRequestEvents: { json: MergeRequestEvent; rebaseError: string | null }[] = [];
     pipelineEvents: PipelineEvent[] = [];
     jobEvents: JobEvent[] = [];
-    queueMap: Map<string, { id: number; json: MergeRequestEvent; date: string }[]> = new Map();
+    queueMap: Map<string, { id: number; json: MergeRequestEvent; date: string; order: number; rebaseError: string | null }[]> = new Map();
     private _isQueueLoaded = false;
 
     constructor() {
@@ -38,6 +38,7 @@ export class DataStore {
         this.addToQueue = this.addToQueue.bind(this);
         this.removeFromQueue = this.removeFromQueue.bind(this);
         this.stepBackInQueue = this.stepBackInQueue.bind(this);
+        this.rebaseNextQueueItem = this.rebaseNextQueueItem.bind(this);
 
         this.subscribe();
     }
@@ -52,12 +53,22 @@ export class DataStore {
         });
 
         this._socket.on('merge-requests', (payload) => {
-            const events = z.array(mergeRequestEventSchema).parse(payload);
+            const events = z.array(z.object({ json: mergeRequestEventSchema, rebaseError: z.string().nullable() })).parse(payload);
             this.setMergeRequests(events);
         });
 
         this._socket.on('queue', (payload) => {
-            const queueItems = z.array(z.object({ id: z.number(), json: mergeRequestEventSchema, date: z.string().datetime() })).parse(payload);
+            const queueItems = z
+                .array(
+                    z.object({
+                        id: z.number(),
+                        json: mergeRequestEventSchema,
+                        date: z.string().datetime(),
+                        order: z.number(),
+                        rebaseError: z.string().nullable()
+                    })
+                )
+                .parse(payload);
             this.setIsQueueLoaded();
             this.updateQueueMap(queueItems);
         });
@@ -73,13 +84,13 @@ export class DataStore {
         });
     }
 
-    private setMergeRequests(events: MergeRequestEvent[]) {
+    private setMergeRequests(events: { json: MergeRequestEvent; rebaseError: string | null }[]) {
         this.mergeRequestEvents = [...events].sort(
-            (a, b) => new Date(b.object_attributes.updated_at).getTime() - new Date(a.object_attributes.updated_at).getTime()
+            (a, b) => new Date(b.json.object_attributes.updated_at).getTime() - new Date(a.json.object_attributes.updated_at).getTime()
         );
     }
 
-    private updateQueueMap(queueItems: { id: number; json: MergeRequestEvent; date: string }[]) {
+    private updateQueueMap(queueItems: { id: number; json: MergeRequestEvent; date: string; order: number; rebaseError: string | null }[]) {
         const repositoriesInQueue = Array.from(new Set(queueItems.map((queueItem) => queueItem.json.repository.name)));
         const keysToRemove = Array.from(this.queueMap.keys()).filter((key) => !repositoriesInQueue.includes(key));
 
@@ -103,13 +114,17 @@ export class DataStore {
 
     addToQueue(event: MergeRequestEvent, isoString: string) {
         this._socket.emit('add-to-queue', {
-            mergeRequestId: event.object_attributes.iid,
+            mergeRequestIid: event.object_attributes.iid,
             isoString: z.string().datetime().parse(isoString)
         });
     }
 
-    removeFromQueue(event: MergeRequestEvent) {
+    async removeFromQueue(event: MergeRequestEvent) {
         this._socket.emit('remove-from-queue', event.object_attributes.iid);
+
+        if (event.object_attributes.action === 'merge') {
+            await this.rebaseNextQueueItem(event);
+        }
     }
 
     stepBackInQueue(event: MergeRequestEvent) {
@@ -118,6 +133,32 @@ export class DataStore {
 
     private setIsQueueLoaded() {
         this._isQueueLoaded = true;
+    }
+
+    private async rebaseNextQueueItem(event: MergeRequestEvent) {
+        const currentOrder = this.queueMap
+            .get(event.project.name)
+            ?.find((queueItem) => queueItem.json.object_attributes.iid === event.object_attributes.iid)?.order;
+
+        const nextMergeRequest = this.queueMap.get(event.project.name)?.find((queueItem) => queueItem.order > (currentOrder ?? 0));
+        if (nextMergeRequest) {
+            const response = await fetch('/api/gitlab/rebase', {
+                method: 'POST',
+                body: JSON.stringify({ projectId: nextMergeRequest.json.project.id, mergeRequestIid: nextMergeRequest.json.object_attributes.iid })
+            });
+
+            if (response.ok) {
+                const json = await response.json();
+                const { mergeRequest } = rebaseResponseSchema.parse(json);
+
+                if (mergeRequest.payload?.merge_error) {
+                    this._socket.emit('add-rebase-error', {
+                        mergeRequestIid: nextMergeRequest.json.object_attributes.iid,
+                        rebaseError: mergeRequest.payload.merge_error
+                    });
+                }
+            }
+        }
     }
 
     get isQueueEmpty() {

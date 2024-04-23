@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { variants } from '@/lib/framer-motion';
 
 type Props = {
-    data: MergeRequestEvent[];
+    data: { json: MergeRequestEvent; rebaseError: string | null }[];
     isQueue: boolean;
 };
 
@@ -15,7 +15,7 @@ const MergeRequestList = ({ data, isQueue }: Props) => {
     return (
         <div className="flex flex-col gap-2 py-1">
             <AnimatePresence mode="popLayout">
-                {data.map((event, i) => {
+                {data.map(({ json: event, rebaseError }, i) => {
                     const isUserAuthor = user !== null && user.id === event.user.id;
                     const isPipelineVisible = isUserAuthor || (isQueue && i === 0);
                     const canStepBack = isQueue && data.length > 1 && i !== data.length - 1;
@@ -34,6 +34,7 @@ const MergeRequestList = ({ data, isQueue }: Props) => {
                                 isUserAuthor={isUserAuthor}
                                 isPipelineVisible={isPipelineVisible}
                                 canStepBack={canStepBack}
+                                rebaseError={rebaseError}
                             />
                         </motion.div>
                     );

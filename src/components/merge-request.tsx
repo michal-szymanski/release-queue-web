@@ -1,18 +1,16 @@
-import { MergeRequestEvent, rebaseResponseSchema } from '@/types';
+import { MergeRequestEvent } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFallback } from '@radix-ui/react-avatar';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { observer } from 'mobx-react';
 import { useStore } from '@/hooks';
 import { Button } from '@/components/ui/button';
-import { ArrowDown, CircleAlert, CircleX, Minus, Plus } from 'lucide-react';
+import { ArrowDown, CircleAlert, Minus, Plus } from 'lucide-react';
 import PipelineDetails from '@/components/pipeline-details';
 import DatePicker from '@/components/date-picker';
-import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AnimatePresence, motion } from 'framer-motion';
 import { variants } from '@/lib/framer-motion';
@@ -25,13 +23,13 @@ type Props = {
     isUserAuthor: boolean;
     isPipelineVisible: boolean;
     canStepBack: boolean;
+    rebaseError: string | null;
 };
 
-const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, canStepBack }: Props) => {
+const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, canStepBack, rebaseError }: Props) => {
     const {
         dataStore: { addToQueue, removeFromQueue, stepBackInQueue }
     } = useStore();
-    const [mergeError, setMergeError] = useState<string | null>(null);
 
     const renderButton = () => {
         if (!isUserAuthor) return null;
@@ -49,35 +47,6 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                         <Minus className="size-5" />
                         <span className="sr-only">Remove from queue</span>
                     </Button>
-                    {!mergeError && (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={mergeError !== null}
-                            onClick={async () => {
-                                if (mergeError) return;
-
-                                const response = await fetch('/api/gitlab/rebase', {
-                                    method: 'POST',
-                                    body: JSON.stringify({ projectId: event.project.id, mergeRequestId: event.object_attributes.iid })
-                                });
-
-                                if (response.ok) {
-                                    const json = await response.json();
-                                    const {
-                                        mergeRequest: { payload }
-                                    } = rebaseResponseSchema.parse(json);
-
-                                    if (payload?.merge_error) {
-                                        setMergeError(payload.merge_error);
-                                    }
-                                }
-                            }}
-                        >
-                            Rebase
-                        </Button>
-                    )}
                 </>
             );
         }
@@ -104,7 +73,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                             </a>
                             {isQueueItem && <MergeRequestBadge state={event.object_attributes.state} />}
                             <AnimatePresence>
-                                {mergeError && (
+                                {rebaseError && (
                                     <motion.div
                                         variants={variants}
                                         initial={['hidden', 'size-small']}
@@ -116,7 +85,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                                                 <TooltipTrigger className="cursor-pointer" asChild>
                                                     <CircleAlert className="text-red-500" />
                                                 </TooltipTrigger>
-                                                <TooltipContent className="pointer-events-none">{mergeError}</TooltipContent>
+                                                <TooltipContent className="pointer-events-none">{rebaseError}</TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
                                     </motion.div>

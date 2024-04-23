@@ -57,11 +57,11 @@ const personalAccessTokenSchema = z.object({
 
 type PersonalAccessToken = z.infer<typeof personalAccessTokenSchema>;
 
-const getPersonalAccessToken = async ({ access_token }: JWT): Promise<PersonalAccessToken> => {
+const getPersonalAccessToken = async (token: JWT): Promise<PersonalAccessToken> => {
     const response = await fetch(`${env.GITLAB_URL}/api/v4/personal_access_tokens?search=release-queue&revoked=false`, {
         method: 'GET',
         headers: {
-            Authorization: `Bearer ${access_token}`
+            Authorization: `Bearer ${token.access_token}`
         }
     });
 
