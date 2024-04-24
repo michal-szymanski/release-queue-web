@@ -15,7 +15,7 @@ const QueueItemList = () => {
         uiStore: { activeRepository }
     } = useStore();
 
-    const queue = activeRepository ? (queueMap.get(activeRepository) ?? []).map(({ json, date, rebaseError }) => ({ json, date, rebaseError })) : [];
+    const queue = activeRepository ? (queueMap.get(activeRepository) ?? []).map(({ json, date }) => ({ json, date })) : [];
     const groups = groupBy(queue, ({ date }) => date);
     const today = new Date();
 
@@ -32,11 +32,11 @@ const QueueItemList = () => {
     };
 
     const renderQueueItems = (date: string) => {
-        const events = (groups[date] ?? []).map(({ json, rebaseError }) => ({ json, rebaseError }));
+        const events = (groups[date] ?? []).map(({ json }) => json);
         return (
             <div className="flex flex-col gap-2 py-1">
                 <AnimatePresence mode="popLayout">
-                    {events.map(({ json: event, rebaseError }, i) => {
+                    {events.map((event, i) => {
                         const isUserAuthor = user !== null && user.id === event.user.id;
                         const isPipelineVisible = isUserAuthor || i === 0;
                         const canStepBack = events.length > 1 && i !== events.length - 1;
@@ -56,7 +56,6 @@ const QueueItemList = () => {
                                     isUserAuthor={isUserAuthor}
                                     isPipelineVisible={isPipelineVisible}
                                     canStepBack={canStepBack}
-                                    rebaseError={rebaseError}
                                 />
                             </motion.div>
                         );

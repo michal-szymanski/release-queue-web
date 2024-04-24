@@ -23,10 +23,9 @@ type Props = {
     isUserAuthor: boolean;
     isPipelineVisible: boolean;
     canStepBack: boolean;
-    rebaseError: string | null;
 };
 
-const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, canStepBack, rebaseError }: Props) => {
+const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, canStepBack }: Props) => {
     const {
         dataStore: { addToQueue, removeFromQueue, stepBackInQueue, rebaseMap }
     } = useStore();
@@ -75,7 +74,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                             </a>
                             {isQueueItem && <MergeRequestBadge state={event.object_attributes.state} />}
                             <AnimatePresence>
-                                {rebaseStatus?.error && (
+                                {isQueueItem && rebaseStatus?.error && (
                                     <motion.div
                                         variants={variants}
                                         initial={['hidden', 'size-small']}

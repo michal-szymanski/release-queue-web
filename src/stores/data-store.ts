@@ -15,10 +15,10 @@ import { env } from '@/env';
 import { minBy } from '@/lib/utils';
 
 export class DataStore {
-    mergeRequestEvents: IObservableArray<{ json: MergeRequestEvent; rebaseError: string | null }>;
+    mergeRequestEvents: IObservableArray<MergeRequestEvent>;
     pipelineEvents: IObservableArray<PipelineEvent>;
     jobEvents: IObservableArray<JobEvent>;
-    queueMap: Map<string, { id: number; json: MergeRequestEvent; date: string; order: number; rebaseError: string | null }[]> = new Map();
+    queueMap: Map<string, { id: number; json: MergeRequestEvent; date: string; order: number }[]> = new Map();
     rebaseMap: Map<number, { inProgress: boolean; error: string | null }> = new Map();
 
     private _socket: ReturnType<typeof io> = io(env.NEXT_PUBLIC_WEBSOCKET_URL, { withCredentials: true });
@@ -97,7 +97,7 @@ export class DataStore {
         });
 
         this._socket.on('merge-requests', (payload) => {
-            const events = z.array(z.object({ json: mergeRequestEventSchema, rebaseError: z.string().nullable() })).parse(payload);
+            const events = z.array(mergeRequestEventSchema).parse(payload);
             this.setMergeRequests(events);
         });
 
@@ -108,8 +108,7 @@ export class DataStore {
                         id: z.number(),
                         json: mergeRequestEventSchema,
                         date: z.string().datetime(),
-                        order: z.number(),
-                        rebaseError: z.string().nullable()
+                        order: z.number()
                     })
                 )
                 .parse(payload);
@@ -128,13 +127,13 @@ export class DataStore {
         });
     }
 
-    private setMergeRequests(events: { json: MergeRequestEvent; rebaseError: string | null }[]) {
+    private setMergeRequests(events: MergeRequestEvent[]) {
         this.mergeRequestEvents.replace(
-            [...events].sort((a, b) => new Date(b.json.object_attributes.updated_at).getTime() - new Date(a.json.object_attributes.updated_at).getTime())
+            [...events].sort((a, b) => new Date(b.object_attributes.updated_at).getTime() - new Date(a.object_attributes.updated_at).getTime())
         );
     }
 
-    private updateQueueMap(queueItems: { id: number; json: MergeRequestEvent; date: string; order: number; rebaseError: string | null }[]) {
+    private updateQueueMap(queueItems: { id: number; json: MergeRequestEvent; date: string; order: number }[]) {
         const repositoriesInQueue = Array.from(new Set(queueItems.map((queueItem) => queueItem.json.repository.name)));
         const keysToRemove = Array.from(this.queueMap.keys()).filter((key) => !repositoriesInQueue.includes(key));
 
@@ -165,6 +164,7 @@ export class DataStore {
 
     async removeFromQueue(event: MergeRequestEvent) {
         this._socket.emit('remove-from-queue', event.object_attributes.iid);
+        this.rebaseMap.delete(event.object_attributes.iid);
 
         const queue = this.queueMap.get(event.project.name) ?? [];
         const isFirstInQueue = minBy(queue, (item) => item.order)?.json.object_attributes.iid === event.object_attributes.iid;
