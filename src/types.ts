@@ -154,28 +154,24 @@ export const jobEventSchema = z.object({
 export type JobEvent = z.infer<typeof jobEventSchema>;
 
 export const rebaseResponseSchema = z.object({
-    rebase: z.object({
-        status: z.number(),
-        payload: z
-            .object({
-                rebase_in_progress: z.boolean(),
-                merge_error: z.string().nullish()
-            })
-            .optional()
-    }),
-    mergeRequest: z.object({
-        status: z.number(),
-        payload: z
-            .object({
-                merge_status: z.string(),
-                detailed_merge_status: z.string(),
-                has_conflicts: z.boolean(),
-                merge_error: z.string().nullable(),
-                rebase_in_progress: z.boolean(),
-                user: z.object({
-                    can_merge: z.boolean()
-                })
-            })
-            .optional()
+    status: z.number(),
+    payload: z.object({
+        rebase_in_progress: z.boolean(),
+        merge_error: z.string().nullish()
+    })
+});
+
+export const mergeRequestsResponseSchema = z.object({
+    status: z.number(),
+    payload: z.object({
+        iid: z.number(),
+        merge_status: z.string(),
+        detailed_merge_status: z.string(),
+        has_conflicts: z.boolean(),
+        merge_error: z.string().nullable(),
+        rebase_in_progress: z.boolean(),
+        user: z.object({
+            can_merge: z.boolean()
+        })
     })
 });

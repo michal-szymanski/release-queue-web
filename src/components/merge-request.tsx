@@ -28,8 +28,10 @@ type Props = {
 
 const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, canStepBack, rebaseError }: Props) => {
     const {
-        dataStore: { addToQueue, removeFromQueue, stepBackInQueue }
+        dataStore: { addToQueue, removeFromQueue, stepBackInQueue, rebaseMap }
     } = useStore();
+
+    const rebaseStatus = rebaseMap.get(event.object_attributes.iid);
 
     const renderButton = () => {
         if (!isUserAuthor) return null;
@@ -73,7 +75,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                             </a>
                             {isQueueItem && <MergeRequestBadge state={event.object_attributes.state} />}
                             <AnimatePresence>
-                                {rebaseError && (
+                                {rebaseStatus?.error && (
                                     <motion.div
                                         variants={variants}
                                         initial={['hidden', 'size-small']}
@@ -85,7 +87,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                                                 <TooltipTrigger className="cursor-pointer" asChild>
                                                     <CircleAlert className="text-red-500" />
                                                 </TooltipTrigger>
-                                                <TooltipContent className="pointer-events-none">{rebaseError}</TooltipContent>
+                                                <TooltipContent className="pointer-events-none">{rebaseStatus.error}</TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
                                     </motion.div>

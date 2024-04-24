@@ -16,7 +16,7 @@ export const MergeRequests = () => {
                         <p className="text-muted-foreground">All of your open merge requests ready to queue.</p>
                     </div>
                     <ScrollArea className="h-full pr-5">
-                        <MergeRequestList data={mergeRequestEvents} isQueue={false} />
+                        <MergeRequestList data={mergeRequestEvents.slice()} isQueue={false} />
                     </ScrollArea>
                 </div>
             </div>
