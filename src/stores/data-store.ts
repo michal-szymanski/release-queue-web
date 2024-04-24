@@ -12,30 +12,29 @@ import { action, autorun, computed, IObservableArray, makeObservable, observable
 import { io } from 'socket.io-client';
 import { z } from 'zod';
 import { env } from '@/env';
+import { minBy } from '@/lib/utils';
 
 export class DataStore {
-    private _socket: ReturnType<typeof io> = io(env.NEXT_PUBLIC_WEBSOCKET_URL, {
-        withCredentials: true
-    });
     mergeRequestEvents: IObservableArray<{ json: MergeRequestEvent; rebaseError: string | null }>;
     pipelineEvents: IObservableArray<PipelineEvent>;
     jobEvents: IObservableArray<JobEvent>;
     queueMap: Map<string, { id: number; json: MergeRequestEvent; date: string; order: number; rebaseError: string | null }[]> = new Map();
     rebaseMap: Map<number, { inProgress: boolean; error: string | null }> = new Map();
 
+    private _socket: ReturnType<typeof io> = io(env.NEXT_PUBLIC_WEBSOCKET_URL, { withCredentials: true });
     private _isQueueLoaded = false;
 
     constructor() {
         type PrivateMembers =
-            | '_socket'
             | 'setMergeRequests'
             | 'updateQueueMap'
             | 'setPipelines'
             | 'setJobs'
             | 'setIsQueueLoaded'
-            | '_isQueueLoaded'
             | 'rebaseNextQueueItem'
-            | 'updateRebaseStatus';
+            | 'updateRebaseStatus'
+            | '_socket'
+            | '_isQueueLoaded';
 
         this.mergeRequestEvents = observable.array([]);
         this.pipelineEvents = observable.array([]);
@@ -66,23 +65,26 @@ export class DataStore {
 
         this.subscribe();
 
-        autorun(async () => {
-            const pipelineEvents = this.pipelineEvents.slice();
-            const mergeRequests = this.mergeRequestEvents.slice().map((mr) => mr.json);
-            const queueItems = Array.from(this.queueMap.values()).flatMap((value) => value.flatMap((innerValue) => innerValue.json));
+        reaction(
+            () => {
+                const queueItems = Array.from(this.queueMap.keys())
+                    .map((key) => minBy(this.queueMap.get(key) ?? [], (item) => item.order)?.json)
+                    .filter((event): event is MergeRequestEvent => event !== undefined);
 
-            for (const pipeline of pipelineEvents) {
-                const mergeRequest =
-                    mergeRequests.find((mr) => mr.object_attributes.last_commit.id === pipeline.commit.id || mr.object_attributes.merge_commit_sha) ??
-                    queueItems.find(
-                        (qi) => qi.object_attributes.last_commit.id === pipeline.commit.id || qi.object_attributes.merge_commit_sha === pipeline.commit.id
+                const pipelines = this.pipelineEvents
+                    .slice()
+                    .filter((p) =>
+                        queueItems.some((qi) => qi.object_attributes.last_commit.id === p.commit.id || qi.object_attributes.merge_commit_sha === p.commit.id)
                     );
 
-                if (mergeRequest) {
+                return { queueItems, pipelines };
+            },
+            async ({ queueItems }) => {
+                for (const mergeRequest of queueItems) {
                     await this.updateRebaseStatus(mergeRequest);
                 }
             }
-        });
+        );
     }
 
     private subscribe() {
@@ -164,7 +166,10 @@ export class DataStore {
     async removeFromQueue(event: MergeRequestEvent) {
         this._socket.emit('remove-from-queue', event.object_attributes.iid);
 
-        if (event.object_attributes.action === 'merge') {
+        const queue = this.queueMap.get(event.project.name) ?? [];
+        const isFirstInQueue = minBy(queue, (item) => item.order)?.json.object_attributes.iid === event.object_attributes.iid;
+
+        if (event.object_attributes.action === 'merge' || isFirstInQueue) {
             await this.rebaseNextQueueItem(event);
         }
     }
@@ -178,32 +183,29 @@ export class DataStore {
     }
 
     private async rebaseNextQueueItem(event: MergeRequestEvent) {
-        const currentOrder = this.queueMap
-            .get(event.project.name)
-            ?.find((queueItem) => queueItem.json.object_attributes.iid === event.object_attributes.iid)?.order;
+        const otherQueueItems = (this.queueMap.get(event.project.name) ?? []).filter((item) => item.json.object_attributes.iid !== event.object_attributes.iid);
+        const nextMergeRequest = minBy(otherQueueItems, (item) => item.order)?.json;
 
-        const nextMergeRequest = this.queueMap.get(event.project.name)?.find((queueItem) => queueItem.order > (currentOrder ?? 0))?.json;
+        if (!nextMergeRequest) return;
 
-        if (nextMergeRequest) {
-            const url = `/api/gitlab/projects/${nextMergeRequest.project.id}/merge-requests/${nextMergeRequest.object_attributes.iid}/rebase`;
-            const response = await fetch(url, {
-                method: 'POST'
-            });
+        const url = `/api/gitlab/projects/${nextMergeRequest.project.id}/merge-requests/${nextMergeRequest.object_attributes.iid}/rebase`;
+        const response = await fetch(url, {
+            method: 'POST'
+        });
 
-            if (response.ok) {
-                const json = await response.json();
+        if (!response.ok) return;
 
-                const {
-                    payload: { rebase_in_progress }
-                } = rebaseResponseSchema.parse(json);
+        const json = await response.json();
 
-                runInAction(() => {
-                    this.rebaseMap.set(nextMergeRequest.object_attributes.iid, { inProgress: rebase_in_progress, error: null });
-                });
+        const {
+            payload: { rebase_in_progress }
+        } = rebaseResponseSchema.parse(json);
 
-                await this.updateRebaseStatus(nextMergeRequest);
-            }
-        }
+        runInAction(() => {
+            this.rebaseMap.set(nextMergeRequest.object_attributes.iid, { inProgress: rebase_in_progress, error: null });
+        });
+
+        await this.updateRebaseStatus(nextMergeRequest);
     }
 
     private async updateRebaseStatus(event: MergeRequestEvent) {
@@ -213,16 +215,16 @@ export class DataStore {
             method: 'GET'
         });
 
-        if (response.ok) {
-            const json = await response.json();
-            const {
-                payload: { iid, merge_error, rebase_in_progress }
-            } = mergeRequestsResponseSchema.parse(json);
+        if (!response.ok) return;
 
-            runInAction(() => {
-                this.rebaseMap.set(iid, { inProgress: rebase_in_progress, error: merge_error });
-            });
-        }
+        const json = await response.json();
+        const {
+            payload: { iid, merge_error, rebase_in_progress }
+        } = mergeRequestsResponseSchema.parse(json);
+
+        runInAction(() => {
+            this.rebaseMap.set(iid, { inProgress: rebase_in_progress, error: merge_error });
+        });
     }
 
     get isQueueEmpty() {
