@@ -1,5 +1,5 @@
 import { MergeRequestEvent } from '@/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFallback } from '@radix-ui/react-avatar';
 import dayjs from 'dayjs';
@@ -95,13 +95,19 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                         </div>
                         {!isQueueItem && <CardDescription>{event.repository.name}</CardDescription>}
                         <CardDescription>Last update: {dayjs(event.object_attributes.updated_at).fromNow()}</CardDescription>
-                        {isPipelineVisible && <PipelineDetails event={event} />}
                     </div>
                     <div className="flex gap-2">{renderButton()}</div>
                 </CardTitle>
             </CardHeader>
-            {isQueueItem && (
+
+            {isPipelineVisible && (
                 <CardContent className="flex flex-col gap-2">
+                    <PipelineDetails event={event} />
+                </CardContent>
+            )}
+
+            {isQueueItem && (
+                <CardFooter>
                     <div className="flex gap-2">
                         <Avatar className="size-6">
                             <AvatarImage src={event.user.avatar_url} />
@@ -111,7 +117,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                         </Avatar>
                         <span>{event.user.name}</span>
                     </div>
-                </CardContent>
+                </CardFooter>
             )}
         </Card>
     );
