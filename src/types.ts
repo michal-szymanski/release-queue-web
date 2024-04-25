@@ -130,6 +130,8 @@ export type User = z.infer<typeof userSchema>;
 
 const pipelineBuildStatusSchema = z.enum(['created', 'pending', 'running', 'success', 'failed', 'skipped']);
 
+export type PipelineBuildStatus = z.infer<typeof pipelineBuildStatusSchema>;
+
 export const pipelineEventSchema = z.object({
     object_kind: z.literal('pipeline'),
     object_attributes: z.object({
@@ -140,15 +142,24 @@ export const pipelineEventSchema = z.object({
     }),
     commit: z.object({
         id: z.string()
-    })
+    }),
+    builds: z.array(
+        z.object({
+            id: z.number(),
+            stage: z.string(),
+            status: pipelineBuildStatusSchema
+        })
+    )
 });
 
 export type PipelineEvent = z.infer<typeof pipelineEventSchema>;
 
 export const jobEventSchema = z.object({
+    build_id: z.number(),
     pipeline_id: z.number(),
     build_stage: z.string(),
-    build_status: pipelineBuildStatusSchema
+    build_status: pipelineBuildStatusSchema,
+    build_allow_failure: z.boolean()
 });
 
 export type JobEvent = z.infer<typeof jobEventSchema>;
