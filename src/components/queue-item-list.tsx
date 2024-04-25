@@ -39,7 +39,7 @@ const QueueItemList = () => {
                     {events.map((event, i) => {
                         const isUserAuthor = user !== null && user.id === event.user.id;
                         const isPipelineVisible = isUserAuthor || i === 0;
-                        const canStepBack = events.length > 1 && i !== events.length - 1;
+                        const canStepBack = events.length > 1 && i !== events.length - 1 && event.object_attributes.state === 'opened';
 
                         return (
                             <motion.div

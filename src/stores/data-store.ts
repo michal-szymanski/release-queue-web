@@ -19,7 +19,7 @@ export class DataStore {
     pipelineEvents: IObservableArray<PipelineEvent>;
     jobEvents: IObservableArray<JobEvent>;
     queueMap: Map<string, { id: number; json: MergeRequestEvent; date: string; order: number }[]> = new Map();
-    rebaseMap: Map<number, { inProgress: boolean; error: string | null }> = new Map();
+    rebaseMap: Map<number, { isInProgress: boolean; hasConflicts: boolean }> = new Map();
 
     private _socket: ReturnType<typeof io> = io(env.NEXT_PUBLIC_WEBSOCKET_URL, { withCredentials: true });
     private _isQueueLoaded = false;
@@ -202,7 +202,7 @@ export class DataStore {
         } = rebaseResponseSchema.parse(json);
 
         runInAction(() => {
-            this.rebaseMap.set(nextMergeRequest.object_attributes.iid, { inProgress: rebase_in_progress, error: null });
+            this.rebaseMap.set(nextMergeRequest.object_attributes.iid, { isInProgress: rebase_in_progress, hasConflicts: false });
         });
 
         await this.updateRebaseStatus(nextMergeRequest);
@@ -219,11 +219,11 @@ export class DataStore {
 
         const json = await response.json();
         const {
-            payload: { iid, merge_error, rebase_in_progress }
+            payload: { iid, rebase_in_progress, has_conflicts }
         } = mergeRequestsResponseSchema.parse(json);
 
         runInAction(() => {
-            this.rebaseMap.set(iid, { inProgress: rebase_in_progress, error: merge_error });
+            this.rebaseMap.set(iid, { isInProgress: rebase_in_progress, hasConflicts: has_conflicts });
         });
     }
 

@@ -74,7 +74,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                             </a>
                             {isQueueItem && <MergeRequestBadge state={event.object_attributes.state} />}
                             <AnimatePresence>
-                                {isQueueItem && rebaseStatus?.error && (
+                                {isQueueItem && rebaseStatus?.hasConflicts && (
                                     <motion.div
                                         variants={variants}
                                         initial={['hidden', 'size-small']}
@@ -86,7 +86,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                                                 <TooltipTrigger className="cursor-pointer" asChild>
                                                     <CircleAlert className="text-red-500" />
                                                 </TooltipTrigger>
-                                                <TooltipContent className="pointer-events-none">{rebaseStatus.error}</TooltipContent>
+                                                <TooltipContent className="pointer-events-none">Merge request conflicts</TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
                                     </motion.div>
