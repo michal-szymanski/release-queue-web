@@ -18,16 +18,16 @@ export const GET = async (req: NextRequest, { params }: { params: Params }) => {
 
         const url = `${env.GITLAB_URL}/api/v4/projects/${projectId}/merge_requests/${mergeRequestIid}?include_rebase_in_progress=true`;
 
-        const mergeRequestResponse = await fetch(url, {
+        const gitlabResponse = await fetch(url, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${token.access_token}`
             }
         });
 
-        const mergeRequestPayload = await mergeRequestResponse.json();
+        const gitlabPayload = await gitlabResponse.json();
 
-        return NextResponse.json({ status: mergeRequestResponse.status, payload: mergeRequestPayload }, { status: 200 });
+        return NextResponse.json(gitlabPayload, { status: gitlabResponse.status });
     } catch (e) {
         return NextResponse.json(e, { status: 400 });
     }

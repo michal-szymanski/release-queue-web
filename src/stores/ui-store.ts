@@ -1,5 +1,5 @@
 import { DataStore } from '@/stores/data-store';
-import { action, autorun, computed, makeObservable, observable } from 'mobx';
+import { action, autorun, computed, makeObservable, observable, runInAction } from 'mobx';
 
 export class UiStore {
     private _dataStore: DataStore;
@@ -22,7 +22,9 @@ export class UiStore {
             if (!this._activeRepository) return;
 
             if (!Array.from(this._dataStore.queueMap.keys()).includes(this._activeRepository)) {
-                this._activeRepository = null;
+                runInAction(() => {
+                    this._activeRepository = null;
+                });
             }
         });
     }

@@ -5,6 +5,7 @@ import { observer } from 'mobx-react';
 
 type Props = {
     event: MergeRequestEvent;
+    isRebasing: boolean;
 };
 
 const getBuildStatus = (isFailureAllowed: boolean, jobStatus: PipelineBuildStatus, buildStatus?: PipelineBuildStatus) => {
@@ -19,7 +20,7 @@ const getBuildStatus = (isFailureAllowed: boolean, jobStatus: PipelineBuildStatu
     return jobStatus;
 };
 
-const PipelineDetails = ({ event }: Props) => {
+const PipelineDetails = ({ event, isRebasing }: Props) => {
     const {
         dataStore: { pipelineEvents, jobEvents }
     } = useStore();
@@ -34,6 +35,15 @@ const PipelineDetails = ({ event }: Props) => {
         .sort((a, b) => a.build_id - b.build_id);
 
     const renderContent = () => {
+        if (isRebasing) {
+            return (
+                <div className="flex gap-2">
+                    <span>Rebasing</span>
+                    <PipelineStageIcon text="rebasing" variant="running" />
+                </div>
+            );
+        }
+
         if (!pipeline) return null;
 
         return (
@@ -55,7 +65,7 @@ const PipelineDetails = ({ event }: Props) => {
         );
     };
 
-    return <div className="flex h-16 flex-col gap-2">{renderContent()}</div>;
+    return <div className="flex h-16 flex-col justify-end gap-2">{renderContent()}</div>;
 };
 
 export default observer(PipelineDetails);

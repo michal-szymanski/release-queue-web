@@ -132,11 +132,26 @@ const pipelineBuildStatusSchema = z.enum(['created', 'pending', 'running', 'succ
 
 export type PipelineBuildStatus = z.infer<typeof pipelineBuildStatusSchema>;
 
+const pipelineStatusSchema = z.enum([
+    'created',
+    'waiting_for_resource',
+    'preparing',
+    'pending',
+    'running',
+    'success',
+    'failed',
+    'canceled',
+    'skipped',
+    'manual',
+    'scheduled'
+]);
+
 export const pipelineEventSchema = z.object({
     object_kind: z.literal('pipeline'),
     object_attributes: z.object({
         id: z.number(),
         detailed_status: z.string(),
+        status: pipelineStatusSchema,
         stages: z.array(z.string()),
         url: z.string().url()
     }),
@@ -165,24 +180,42 @@ export const jobEventSchema = z.object({
 export type JobEvent = z.infer<typeof jobEventSchema>;
 
 export const rebaseResponseSchema = z.object({
-    status: z.number(),
-    payload: z.object({
-        rebase_in_progress: z.boolean(),
-        merge_error: z.string().nullish()
+    rebase_in_progress: z.boolean(),
+    merge_error: z.string().nullish()
+});
+
+const detailedMergeStatusEnum = z.enum([
+    'unchecked',
+    'checking',
+    'mergeable',
+    'commits_status',
+    'ci_must_pass',
+    'ci_still_running',
+    'discussions_not_resolved',
+    'draft_status',
+    'not_open',
+    'not_approved',
+    'merge_request_blocked',
+    'status_checks_must_pass',
+    'preparing',
+    'jira_association_missing',
+    'conflict',
+    'need_rebase',
+    'approvals_syncing'
+]);
+
+export type DetailedMergeStatus = z.infer<typeof detailedMergeStatusEnum>;
+
+export const mergeRequestsResponseSchema = z.object({
+    iid: z.number(),
+    merge_status: z.string(),
+    detailed_merge_status: detailedMergeStatusEnum,
+    has_conflicts: z.boolean(),
+    merge_error: z.string().nullable(),
+    rebase_in_progress: z.boolean(),
+    user: z.object({
+        can_merge: z.boolean()
     })
 });
 
-export const mergeRequestsResponseSchema = z.object({
-    status: z.number(),
-    payload: z.object({
-        iid: z.number(),
-        merge_status: z.string(),
-        detailed_merge_status: z.string(),
-        has_conflicts: z.boolean(),
-        merge_error: z.string().nullable(),
-        rebase_in_progress: z.boolean(),
-        user: z.object({
-            can_merge: z.boolean()
-        })
-    })
-});
+export type MergeRequestResponse = z.infer<typeof mergeRequestsResponseSchema>;

@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { AnimatePresence, motion } from 'framer-motion';
 import { variants } from '@/lib/framer-motion';
 import MergeRequestBadge from '@/components/merge-request-badge';
+
 dayjs.extend(relativeTime);
 
 type Props = {
@@ -27,10 +28,17 @@ type Props = {
 
 const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, canStepBack }: Props) => {
     const {
-        dataStore: { addToQueue, removeFromQueue, stepBackInQueue, rebaseMap }
+        dataStore: { addToQueue, removeFromQueue, stepBackInQueue, rebase, rebaseMap }
     } = useStore();
 
     const rebaseStatus = rebaseMap.get(event.object_attributes.iid);
+    const hasConflict = rebaseStatus?.status === 'conflict';
+    const needRebase = rebaseStatus?.status === 'need_rebase';
+    const isRebasing = rebaseStatus?.isRebasing === true;
+    //const { data: metadata } = useMergeRequest({ event, enabled: isQueueItem });
+    // const rebaseMutation = useRebaseMutation({ event });
+    // const hasConflict = metadata?.detailed_merge_status === 'conflict';
+    // const needRebase = metadata?.detailed_merge_status === 'need_rebase';
 
     const renderButton = () => {
         if (!isUserAuthor) return null;
@@ -38,6 +46,14 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
         if (isQueueItem) {
             return (
                 <>
+                    {needRebase && !isRebasing && (
+                        <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => rebase(event)}>
+                            Rebase
+                        </Button>
+                        // <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => rebaseMutation.mutate()}>
+                        //     Rebase
+                        // </Button>
+                    )}
                     {canStepBack && (
                         <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => stepBackInQueue(event)}>
                             <ArrowDown className="size-5" />
@@ -74,7 +90,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                             </a>
                             {isQueueItem && <MergeRequestBadge state={event.object_attributes.state} />}
                             <AnimatePresence>
-                                {isQueueItem && rebaseStatus?.hasConflicts && (
+                                {isQueueItem && hasConflict && (
                                     <motion.div
                                         variants={variants}
                                         initial={['hidden', 'size-small']}
@@ -86,7 +102,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                                                 <TooltipTrigger className="cursor-pointer" asChild>
                                                     <CircleAlert className="text-red-500" />
                                                 </TooltipTrigger>
-                                                <TooltipContent className="pointer-events-none">Merge request conflicts</TooltipContent>
+                                                <TooltipContent className="pointer-events-none">Merge conflicts</TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
                                     </motion.div>
@@ -102,7 +118,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
 
             {isPipelineVisible && (
                 <CardContent className="flex flex-col gap-2">
-                    <PipelineDetails event={event} />
+                    <PipelineDetails event={event} isRebasing={isRebasing} />
                 </CardContent>
             )}
 
