@@ -4,9 +4,6 @@ import { observer } from 'mobx-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export const MergeRequests = () => {
-    const {
-        dataStore: { mergeRequestEvents }
-    } = useStore();
     return (
         <div className="h-full overflow-hidden rounded-[0.5rem] border bg-background shadow-md md:shadow-xl">
             <div className="flex h-full flex-1 flex-col space-y-8 p-8">
@@ -16,7 +13,7 @@ export const MergeRequests = () => {
                         <p className="text-muted-foreground">All of your open merge requests ready to queue.</p>
                     </div>
                     <ScrollArea className="h-full pr-5">
-                        <MergeRequestList data={mergeRequestEvents.slice()} isQueue={false} />
+                        <MergeRequestList />
                     </ScrollArea>
                 </div>
             </div>
@@ -24,4 +21,4 @@ export const MergeRequests = () => {
     );
 };
 
-export default observer(MergeRequests);
+export default MergeRequests;

@@ -1,136 +1,49 @@
-import {
-    DetailedMergeStatus,
-    JobEvent,
-    jobEventSchema,
-    MergeRequestEvent,
-    mergeRequestEventSchema,
-    mergeRequestsResponseSchema,
-    PipelineEvent,
-    pipelineEventSchema,
-    rebaseResponseSchema
-} from '@/types';
+import { EventModel, eventModelSchema, JobEvent, jobEventSchema, MergeRequestEvent, mergeRequestEventSchema, pipelineEventSchema } from '@/types';
 import { action, computed, IObservableArray, makeObservable, observable, runInAction } from 'mobx';
 import { io } from 'socket.io-client';
 import { z } from 'zod';
 import { env } from '@/env';
+import { EventStore } from '@/stores/event-store';
 
 export class DataStore {
-    mergeRequestEvents: IObservableArray<MergeRequestEvent>;
-    pipelineEvents: IObservableArray<PipelineEvent>;
-    jobEvents: IObservableArray<JobEvent>;
-    queueMap: Map<string, { id: number; json: MergeRequestEvent; date: string; order: number }[]> = new Map();
-    rebaseMap: Map<number, { isRebasing: boolean; status: DetailedMergeStatus }> = new Map();
+    queueMap: Map<string, { id: number; model: EventStore; date: string; order: number }[]> = new Map();
+    models: IObservableArray<EventStore>;
 
     private _socket: ReturnType<typeof io> = io(env.NEXT_PUBLIC_WEBSOCKET_URL, { withCredentials: true });
     private _isQueueLoaded = false;
+    private _unassignedJobs: IObservableArray<JobEvent>;
 
     constructor() {
-        type PrivateMembers =
-            | 'setMergeRequests'
-            | 'updateQueueMap'
-            | 'setPipelines'
-            | 'setJobs'
-            | 'setIsQueueLoaded'
-            | 'updateDetailedMergeStatus'
-            | '_socket'
-            | '_isQueueLoaded';
+        type PrivateMembers = 'updateQueueMap' | 'setIsQueueLoaded' | '_socket' | 'setModels' | 'addModel' | '_isQueueLoaded';
 
-        this.mergeRequestEvents = observable.array([]);
-        this.pipelineEvents = observable.array([]);
-        this.jobEvents = observable.array([]);
+        this.models = observable.array([]);
+        this._unassignedJobs = observable.array([]);
 
         makeObservable<DataStore, PrivateMembers>(this, {
+            // Observables
             queueMap: observable,
             _socket: observable,
-            setMergeRequests: action,
+            _isQueueLoaded: observable,
+
+            // Actions
+            stepBackInQueue: action,
             addToQueue: action,
             removeFromQueue: action,
             updateQueueMap: action,
-            setPipelines: action,
-            setJobs: action,
-            stepBackInQueue: action,
-            _isQueueLoaded: observable,
-            isQueueEmpty: computed,
             setIsQueueLoaded: action,
-            rebaseMap: observable,
-            rebase: action,
-            updateDetailedMergeStatus: action
+            setModels: action,
+            addModel: action,
+
+            // Computed
+            isQueueEmpty: computed
         });
 
         this.addToQueue = this.addToQueue.bind(this);
         this.removeFromQueue = this.removeFromQueue.bind(this);
         this.stepBackInQueue = this.stepBackInQueue.bind(this);
-        this.rebase = this.rebase.bind(this);
+        this.getMergeRequestsByUserId = this.getMergeRequestsByUserId.bind(this);
 
         this.subscribe();
-    }
-
-    private subscribe() {
-        this._socket.on('connect', () => {
-            console.log(`Client connected. id: ${this._socket.id}`);
-        });
-
-        this._socket.on('disconnect', () => {
-            console.log(`Client disconnected. id: ${this._socket.id}`);
-        });
-
-        this._socket.on('merge-requests', (payload) => {
-            const events = z.array(mergeRequestEventSchema).parse(payload);
-            this.setMergeRequests(events);
-        });
-
-        this._socket.on('queue', (payload) => {
-            const queueItems = z
-                .array(
-                    z.object({
-                        id: z.number(),
-                        json: mergeRequestEventSchema,
-                        date: z.string().datetime(),
-                        order: z.number()
-                    })
-                )
-                .parse(payload);
-            this.setIsQueueLoaded();
-            this.updateQueueMap(queueItems);
-        });
-
-        this._socket.on('pipelines', (payload) => {
-            const events = z.array(pipelineEventSchema).parse(payload);
-            this.setPipelines(events);
-        });
-
-        this._socket.on('jobs', (payload) => {
-            const events = z.array(jobEventSchema).parse(payload);
-            this.setJobs(events);
-        });
-    }
-
-    private setMergeRequests(events: MergeRequestEvent[]) {
-        this.mergeRequestEvents.replace(
-            [...events].sort((a, b) => new Date(b.object_attributes.updated_at).getTime() - new Date(a.object_attributes.updated_at).getTime())
-        );
-    }
-
-    private updateQueueMap(queueItems: { id: number; json: MergeRequestEvent; date: string; order: number }[]) {
-        const repositoriesInQueue = Array.from(new Set(queueItems.map((queueItem) => queueItem.json.repository.name)));
-        const keysToRemove = Array.from(this.queueMap.keys()).filter((key) => !repositoriesInQueue.includes(key));
-
-        for (const key of keysToRemove) {
-            this.queueMap.delete(key);
-        }
-
-        for (const repositoryName of repositoriesInQueue) {
-            const queue = queueItems.filter((queueItem) => queueItem.json.repository.name === repositoryName);
-            this.queueMap.set(repositoryName, queue);
-        }
-    }
-
-    private setPipelines(events: PipelineEvent[]) {
-        this.pipelineEvents.replace([...events]);
-    }
-
-    private setJobs(events: JobEvent[]) {
-        this.jobEvents.replace([...events]);
     }
 
     addToQueue(event: MergeRequestEvent, isoString: string) {
@@ -142,7 +55,6 @@ export class DataStore {
 
     async removeFromQueue(event: MergeRequestEvent) {
         this._socket.emit('remove-from-queue', event.object_attributes.iid);
-        this.rebaseMap.delete(event.object_attributes.iid);
     }
 
     stepBackInQueue(event: MergeRequestEvent) {
@@ -153,50 +65,141 @@ export class DataStore {
         return this._isQueueLoaded && this.queueMap.size === 0;
     }
 
-    async rebase(event: MergeRequestEvent) {
-        const { iid } = event.object_attributes;
-        const prev = this.rebaseMap.get(iid);
-        if (!prev) return;
+    getMergeRequestsByUserId(userId: number) {
+        const queueItems = Array.from(this.queueMap.values()).flatMap((item) => item);
 
-        runInAction(() => {
-            this.rebaseMap.set(iid, { ...prev, isRebasing: true });
-        });
-
-        const url = `/api/gitlab/projects/${event.project.id}/merge-requests/${iid}/rebase`;
-        const response = await fetch(url, {
-            method: 'POST'
-        });
-
-        if (!response.ok) {
-            runInAction(() => {
-                this.rebaseMap.set(iid, { ...prev, isRebasing: false });
-            });
-            return;
-        }
-
-        const json = await response.json();
-
-        const { rebase_in_progress } = rebaseResponseSchema.parse(json);
-
-        runInAction(() => {
-            this.rebaseMap.set(iid, { ...prev, isRebasing: rebase_in_progress });
-        });
+        return this.models
+            .filter(
+                (model) =>
+                    model.mergeRequest.object_attributes.author_id === userId &&
+                    !queueItems.some((item) => item.model.mergeRequest.object_attributes.iid === model.mergeRequest.object_attributes.iid)
+            )
+            .slice();
     }
 
-    private async updateDetailedMergeStatus(event: MergeRequestEvent) {
-        const url = `/api/gitlab/projects/${event.project.id}/merge-requests/${event.object_attributes.iid}`;
+    private setModels(events: EventModel[]) {
+        const models = events.map((model) => new EventStore(model));
+        this.models.replace(models);
+    }
 
-        const response = await fetch(url, {
-            method: 'GET'
+    private addModel(event: EventModel) {
+        this.models.push(new EventStore(event));
+    }
+
+    private updateQueueMap(queueItems: { id: number; mergeRequestIid: number; date: string; order: number }[]) {
+        const queueData: { id: number; model: EventStore; date: string; order: number }[] = [];
+
+        for (const { mergeRequestIid, ...rest } of queueItems) {
+            const model = this.models.find((model) => model.mergeRequest.object_attributes.iid === mergeRequestIid);
+            if (model) {
+                queueData.push({ ...rest, model });
+            }
+        }
+
+        const repositoriesInQueue = Array.from(new Set(queueData.map((queueItem) => queueItem.model.mergeRequest.repository.name)));
+        const keysToRemove = Array.from(this.queueMap.keys()).filter((key) => !repositoriesInQueue.includes(key));
+
+        for (const key of keysToRemove) {
+            this.queueMap.delete(key);
+        }
+
+        for (const repositoryName of repositoriesInQueue) {
+            const queue = queueData.filter((queueItem) => queueItem.model.mergeRequest.repository.name === repositoryName);
+            this.queueMap.set(repositoryName, queue);
+        }
+    }
+
+    private subscribe() {
+        this._socket.on('connect', () => {
+            console.log(`Client connected. id: ${this._socket.id}`);
         });
 
-        if (!response.ok) return;
+        this._socket.on('disconnect', () => {
+            console.log(`Client disconnected. id: ${this._socket.id}`);
+        });
 
-        const json = await response.json();
-        const { iid, rebase_in_progress, detailed_merge_status } = mergeRequestsResponseSchema.parse(json);
+        this._socket.on('events', (payload) => {
+            const events = z.array(eventModelSchema).parse(payload);
+            this.setModels(events);
+        });
 
-        runInAction(() => {
-            this.rebaseMap.set(iid, { isRebasing: rebase_in_progress, status: detailed_merge_status });
+        this._socket.on('queue', (payload) => {
+            const queueItems = z
+                .array(
+                    z.object({
+                        id: z.number(),
+                        mergeRequestIid: z.number(),
+                        date: z.string().datetime(),
+                        order: z.number()
+                    })
+                )
+                .parse(payload);
+            this.setIsQueueLoaded();
+            this.updateQueueMap(queueItems);
+        });
+
+        this._socket.on('merge-request', (payload) => {
+            const message = mergeRequestEventSchema.parse(payload);
+
+            const model = this.models.find((model) => model.mergeRequest.object_attributes.iid === message.object_attributes.iid);
+            const unassignedJobs = this._unassignedJobs.filter((job) => job.commit.sha === message.object_attributes.last_commit.id);
+
+            if (model) {
+                model.updateMergeRequest(message);
+
+                if (unassignedJobs.length) {
+                    model.clearJobs();
+
+                    for (let job of unassignedJobs) {
+                        model.updateJob(job);
+                    }
+                }
+            } else {
+                this.addModel({
+                    mergeRequest: message,
+                    jobs: unassignedJobs
+                });
+            }
+
+            if (unassignedJobs.length) {
+                runInAction(() => {
+                    this._unassignedJobs.replace(this._unassignedJobs.filter((uj) => unassignedJobs.some((j) => uj.build_id === j.build_id)));
+                });
+            }
+        });
+
+        this._socket.on('pipeline', (payload) => {
+            const message = pipelineEventSchema.parse(payload);
+
+            const model = this.models.find((model) => model.mergeRequest.object_attributes.last_commit.id === message.commit.id);
+
+            if (!model) return;
+
+            model.updatePipeline(message);
+        });
+
+        this._socket.on('job', (payload) => {
+            const message = jobEventSchema.parse(payload);
+
+            const model = this.models.find((model) => model.mergeRequest.object_attributes.last_commit.id === message.commit.sha);
+            if (model) {
+                model.updateJob(message);
+            } else {
+                runInAction(() => {
+                    const jobs = this._unassignedJobs.map((j) => {
+                        if (j.build_id === message.build_id) {
+                            return message;
+                        }
+                        return j;
+                    });
+
+                    if (!jobs.some((j) => j.build_id === message.build_id)) {
+                        jobs.push(message);
+                    }
+
+                    this._unassignedJobs.replace(jobs);
+                });
+            }
         });
     }
 

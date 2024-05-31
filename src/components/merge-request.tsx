@@ -15,26 +15,26 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { AnimatePresence, motion } from 'framer-motion';
 import { variants } from '@/lib/framer-motion';
 import MergeRequestBadge from '@/components/merge-request-badge';
+import { EventStore } from '@/stores/event-store';
 
 dayjs.extend(relativeTime);
 
 type Props = {
-    event: MergeRequestEvent;
+    model: EventStore;
     isQueueItem: boolean;
     isUserAuthor: boolean;
     isPipelineVisible: boolean;
     canStepBack: boolean;
 };
 
-const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, canStepBack }: Props) => {
+const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, canStepBack }: Props) => {
     const {
-        dataStore: { addToQueue, removeFromQueue, stepBackInQueue, rebase, rebaseMap }
+        dataStore: { addToQueue, removeFromQueue, stepBackInQueue }
     } = useStore();
 
-    const rebaseStatus = rebaseMap.get(event.object_attributes.iid);
-    const hasConflict = rebaseStatus?.status === 'conflict';
-    const needRebase = rebaseStatus?.status === 'need_rebase';
-    const isRebasing = rebaseStatus?.isRebasing === true;
+    const hasConflict = model.metadata?.detailed_merge_status === 'conflict';
+    const needRebase = model.metadata?.detailed_merge_status === 'need_rebase';
+
     //const { data: metadata } = useMergeRequest({ event, enabled: isQueueItem });
     // const rebaseMutation = useRebaseMutation({ event });
     // const hasConflict = metadata?.detailed_merge_status === 'conflict';
@@ -46,8 +46,8 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
         if (isQueueItem) {
             return (
                 <>
-                    {needRebase && !isRebasing && (
-                        <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => rebase(event)}>
+                    {needRebase && !model.isRebasing && (
+                        <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => model.rebase()}>
                             Rebase
                         </Button>
                         // <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => rebaseMutation.mutate()}>
@@ -55,12 +55,12 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                         // </Button>
                     )}
                     {canStepBack && (
-                        <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => stepBackInQueue(event)}>
+                        <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => stepBackInQueue(model.mergeRequest)}>
                             <ArrowDown className="size-5" />
                             <span className="sr-only">Step back in queue</span>
                         </Button>
                     )}
-                    <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => removeFromQueue(event)}>
+                    <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => removeFromQueue(model.mergeRequest)}>
                         <Minus className="size-5" />
                         <span className="sr-only">Remove from queue</span>
                     </Button>
@@ -70,8 +70,8 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
 
         return (
             <>
-                <DatePicker event={event} />
-                <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => addToQueue(event, new Date().toISOString())}>
+                <DatePicker event={model.mergeRequest} />
+                <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => addToQueue(model.mergeRequest, new Date().toISOString())}>
                     <Plus className="size-5" />
                     <span className="sr-only">Add to queue</span>
                 </Button>
@@ -85,10 +85,10 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                 <CardTitle className="flex items-start justify-between">
                     <div className="flex flex-col gap-2">
                         <div className="flex items-end gap-2">
-                            <a href={event.object_attributes.url} target="_blank" rel="noopener noreferrer">
-                                {event.object_attributes.title}
+                            <a href={model.mergeRequest.object_attributes.url} target="_blank" rel="noopener noreferrer">
+                                {model.mergeRequest.object_attributes.title}
                             </a>
-                            {isQueueItem && <MergeRequestBadge state={event.object_attributes.state} />}
+                            {isQueueItem && <MergeRequestBadge state={model.mergeRequest.object_attributes.state} />}
                             <AnimatePresence>
                                 {isQueueItem && hasConflict && (
                                     <motion.div
@@ -109,8 +109,8 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                                 )}
                             </AnimatePresence>
                         </div>
-                        {!isQueueItem && <CardDescription>{event.repository.name}</CardDescription>}
-                        <CardDescription>Last update: {dayjs(event.object_attributes.updated_at).fromNow()}</CardDescription>
+                        {!isQueueItem && <CardDescription>{model.mergeRequest.repository.name}</CardDescription>}
+                        <CardDescription>Last update: {dayjs(model.mergeRequest.object_attributes.updated_at).fromNow()}</CardDescription>
                     </div>
                     <div className="flex gap-2">{renderButton()}</div>
                 </CardTitle>
@@ -118,7 +118,7 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
 
             {isPipelineVisible && (
                 <CardContent className="flex flex-col gap-2">
-                    <PipelineDetails event={event} isRebasing={isRebasing} />
+                    <PipelineDetails model={model} />
                 </CardContent>
             )}
 
@@ -126,12 +126,12 @@ const MergeRequest = ({ event, isQueueItem, isUserAuthor, isPipelineVisible, can
                 <CardFooter>
                     <div className="flex gap-2">
                         <Avatar className="size-6">
-                            <AvatarImage src={event.user.avatar_url} />
+                            <AvatarImage src={model.mergeRequest.user.avatar_url} />
                             <AvatarFallback>
                                 <Skeleton className="size-6 rounded-full" />
                             </AvatarFallback>
                         </Avatar>
-                        <span>{event.user.name}</span>
+                        <span>{model.mergeRequest.user.name}</span>
                     </div>
                 </CardFooter>
             )}

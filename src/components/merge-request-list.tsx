@@ -1,40 +1,36 @@
 import MergeRequest from '@/components/merge-request';
 import { MergeRequestEvent } from '@/types';
-import { useUser } from '@/hooks';
+import { useStore, useUser } from '@/hooks';
 import { AnimatePresence, motion } from 'framer-motion';
 import { variants } from '@/lib/framer-motion';
+import { EventStore } from '@/stores/event-store';
+import { observer } from 'mobx-react';
 
-type Props = {
-    data: MergeRequestEvent[];
-    isQueue: boolean;
-};
-
-const MergeRequestList = ({ data, isQueue }: Props) => {
+const MergeRequestList = () => {
+    const {
+        dataStore: { getMergeRequestsByUserId: userMergeRequests }
+    } = useStore();
     const user = useUser();
 
+    if (!user) return null;
+
+    const models = userMergeRequests(user.id);
     return (
         <div className="flex flex-col gap-2 py-1">
             <AnimatePresence mode="popLayout">
-                {data.map((event, i) => {
-                    const isUserAuthor = user !== null && user.id === event.user.id;
-                    const isPipelineVisible = isUserAuthor || (isQueue && i === 0);
-                    const canStepBack = isQueue && data.length > 1 && i !== data.length - 1;
+                {models.map((model, i) => {
+                    const isUserAuthor = user.id === model.mergeRequest.user.id;
+
                     return (
                         <motion.div
-                            key={event.object_attributes.iid}
+                            key={model.mergeRequest.object_attributes.iid}
                             layout="position"
                             variants={variants}
                             initial={['hidden', 'size-small']}
                             animate={['visible', 'size-normal']}
                             exit={['hidden', 'size-small']}
                         >
-                            <MergeRequest
-                                event={event}
-                                isQueueItem={isQueue}
-                                isUserAuthor={isUserAuthor}
-                                isPipelineVisible={isPipelineVisible}
-                                canStepBack={canStepBack}
-                            />
+                            <MergeRequest model={model} isQueueItem={false} isUserAuthor={true} isPipelineVisible={true} canStepBack={false} />
                         </motion.div>
                     );
                 })}
@@ -42,4 +38,4 @@ const MergeRequestList = ({ data, isQueue }: Props) => {
         </div>
     );
 };
-export default MergeRequestList;
+export default observer(MergeRequestList);

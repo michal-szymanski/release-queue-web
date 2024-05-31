@@ -15,7 +15,7 @@ const QueueItemList = () => {
         uiStore: { activeRepository }
     } = useStore();
 
-    const queue = activeRepository ? (queueMap.get(activeRepository) ?? []).map(({ json, date }) => ({ json, date })) : [];
+    const queue = activeRepository ? (queueMap.get(activeRepository) ?? []).map(({ model, date }) => ({ model, date })) : [];
     const groups = groupBy(queue, ({ date }) => date);
     const today = new Date();
 
@@ -32,18 +32,18 @@ const QueueItemList = () => {
     };
 
     const renderQueueItems = (date: string) => {
-        const events = (groups[date] ?? []).map(({ json }) => json);
+        const models = (groups[date] ?? []).map(({ model }) => model);
         return (
             <div className="flex flex-col gap-2 py-1">
                 <AnimatePresence mode="popLayout">
-                    {events.map((event, i) => {
-                        const isUserAuthor = user !== null && user.id === event.user.id;
+                    {models.map((model, i) => {
+                        const isUserAuthor = user !== null && user.id === model.mergeRequest.user.id;
                         const isPipelineVisible = isUserAuthor || i === 0;
-                        const canStepBack = events.length > 1 && i !== events.length - 1 && event.object_attributes.state === 'opened';
+                        const canStepBack = models.length > 1 && i !== models.length - 1 && model.mergeRequest.object_attributes.state === 'opened';
 
                         return (
                             <motion.div
-                                key={event.object_attributes.iid}
+                                key={model.mergeRequest.object_attributes.iid}
                                 layout="position"
                                 variants={variants}
                                 initial={['hidden', 'size-small']}
@@ -51,7 +51,7 @@ const QueueItemList = () => {
                                 exit={['hidden', 'size-small']}
                             >
                                 <MergeRequest
-                                    event={event}
+                                    model={model}
                                     isQueueItem={true}
                                     isUserAuthor={isUserAuthor}
                                     isPipelineVisible={isPipelineVisible}

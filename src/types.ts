@@ -174,7 +174,10 @@ export const jobEventSchema = z.object({
     pipeline_id: z.number(),
     build_stage: z.string(),
     build_status: pipelineBuildStatusSchema,
-    build_allow_failure: z.boolean()
+    build_allow_failure: z.boolean(),
+    commit: z.object({
+        sha: z.string()
+    })
 });
 
 export type JobEvent = z.infer<typeof jobEventSchema>;
@@ -218,4 +221,12 @@ export const mergeRequestsResponseSchema = z.object({
     })
 });
 
-export type MergeRequestResponse = z.infer<typeof mergeRequestsResponseSchema>;
+export type MergeRequestMetadata = z.infer<typeof mergeRequestsResponseSchema>;
+
+export const eventModelSchema = z.object({
+    mergeRequest: mergeRequestEventSchema,
+    pipeline: pipelineEventSchema.optional(),
+    jobs: z.array(jobEventSchema)
+});
+
+export type EventModel = z.infer<typeof eventModelSchema>;
