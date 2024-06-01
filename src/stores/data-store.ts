@@ -1,6 +1,6 @@
 import {
-    EventModel,
-    eventModelSchema,
+    EventModelParams,
+    eventModelParamsSchema,
     JobEvent,
     jobEventSchema,
     MergeRequestEvent,
@@ -12,11 +12,11 @@ import { action, computed, IObservableArray, makeObservable, observable, runInAc
 import { io } from 'socket.io-client';
 import { z } from 'zod';
 import { env } from '@/env';
-import { EventStore } from '@/stores/event-store';
+import { EventModel } from '@/models/event-model';
 
 export class DataStore {
-    queueMap: Map<string, { id: number; model: EventStore; date: string; order: number }[]> = new Map();
-    models: IObservableArray<EventStore>;
+    queueMap: Map<string, { id: number; model: EventModel; date: string; order: number }[]> = new Map();
+    models: IObservableArray<EventModel>;
 
     private _socket: ReturnType<typeof io> = io(env.NEXT_PUBLIC_WEBSOCKET_URL, { withCredentials: true });
     private _isQueueLoaded = false;
@@ -52,7 +52,7 @@ export class DataStore {
         this.addToQueue = this.addToQueue.bind(this);
         this.removeFromQueue = this.removeFromQueue.bind(this);
         this.stepBackInQueue = this.stepBackInQueue.bind(this);
-        this.getMergeRequestsByUserId = this.getMergeRequestsByUserId.bind(this);
+        this.getModelsByUserId = this.getModelsByUserId.bind(this);
 
         this.subscribe();
     }
@@ -64,7 +64,7 @@ export class DataStore {
         });
     }
 
-    async removeFromQueue(model: EventStore) {
+    async removeFromQueue(model: EventModel) {
         this._socket.emit('remove-from-queue', model.mergeRequest.object_attributes.iid);
 
         if (model.mergeRequest.object_attributes.state === 'merged') {
@@ -72,15 +72,15 @@ export class DataStore {
         }
     }
 
-    stepBackInQueue(event: MergeRequestEvent) {
-        this._socket.emit('step-back-in-queue', event.object_attributes.iid);
+    stepBackInQueue(model: EventModel) {
+        this._socket.emit('step-back-in-queue', model.mergeRequest.object_attributes.iid);
     }
 
     get isQueueEmpty() {
         return this._isQueueLoaded && this.queueMap.size === 0;
     }
 
-    getMergeRequestsByUserId(userId: number) {
+    getModelsByUserId(userId: number) {
         const queueItems = Array.from(this.queueMap.values()).flatMap((item) => item);
 
         return this.models
@@ -92,17 +92,17 @@ export class DataStore {
             .slice();
     }
 
-    private setModels(events: EventModel[]) {
-        const models = events.map((model) => new EventStore(model));
+    private setModels(params: EventModelParams[]) {
+        const models = params.map((param) => new EventModel(param));
         this.models.replace(models);
     }
 
-    private addModel(event: EventModel) {
-        this.models.push(new EventStore(event));
+    private addModel(params: EventModelParams) {
+        this.models.push(new EventModel(params));
     }
 
     private updateQueueMap(queueItems: { id: number; mergeRequestIid: number; date: string; order: number }[]) {
-        const queueData: { id: number; model: EventStore; date: string; order: number }[] = [];
+        const queueData: { id: number; model: EventModel; date: string; order: number }[] = [];
 
         for (const { mergeRequestIid, ...rest } of queueItems) {
             const model = this.models.find((model) => model.mergeRequest.object_attributes.iid === mergeRequestIid);
@@ -134,8 +134,8 @@ export class DataStore {
         });
 
         this._socket.on('events', (payload) => {
-            const events = z.array(eventModelSchema).parse(payload);
-            this.setModels(events);
+            const params = z.array(eventModelParamsSchema).parse(payload);
+            this.setModels(params);
         });
 
         this._socket.on('queue', (payload) => {

@@ -223,10 +223,10 @@ export const mergeRequestsResponseSchema = z.object({
 
 export type MergeRequestMetadata = z.infer<typeof mergeRequestsResponseSchema>;
 
-export const eventModelSchema = z.object({
+export const eventModelParamsSchema = z.object({
     mergeRequest: mergeRequestEventSchema,
     pipeline: pipelineEventSchema.nullable(),
     jobs: z.array(jobEventSchema)
 });
 
-export type EventModel = z.infer<typeof eventModelSchema>;
+export type EventModelParams = z.infer<typeof eventModelParamsSchema>;

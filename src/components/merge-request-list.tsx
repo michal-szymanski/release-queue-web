@@ -6,7 +6,7 @@ import { observer } from 'mobx-react';
 
 const MergeRequestList = () => {
     const {
-        dataStore: { getMergeRequestsByUserId: userMergeRequests }
+        dataStore: { getModelsByUserId: userMergeRequests }
     } = useStore();
     const user = useUser();
 

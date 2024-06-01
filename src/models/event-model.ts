@@ -1,14 +1,14 @@
-import { EventModel, JobEvent, MergeRequestEvent, MergeRequestMetadata, mergeRequestsResponseSchema, PipelineEvent, rebaseResponseSchema } from '@/types';
+import { EventModelParams, JobEvent, MergeRequestEvent, MergeRequestMetadata, mergeRequestsResponseSchema, PipelineEvent, rebaseResponseSchema } from '@/types';
 import { makeAutoObservable, reaction, runInAction } from 'mobx';
 
-export class EventStore {
+export class EventModel {
     private _mergeRequest: MergeRequestEvent;
     private _pipeline: PipelineEvent | null;
     private _jobs: JobEvent[];
     private _metadata: MergeRequestMetadata | null;
     private _isRebasing: boolean;
 
-    constructor({ mergeRequest, pipeline, jobs }: EventModel) {
+    constructor({ mergeRequest, pipeline, jobs }: EventModelParams) {
         this._mergeRequest = mergeRequest;
         this._pipeline = pipeline;
         this._jobs = jobs;
@@ -26,8 +26,8 @@ export class EventStore {
 
                 if (!isRebasing || !pipeline) return;
 
-                const isPipelineRunning = pipeline.object_attributes.status === 'pending';
-                this.setRebasing(!isPipelineRunning);
+                const isPipelinePending = pipeline.object_attributes.status === 'pending';
+                this.setRebasing(!isPipelinePending);
             }
         );
     }

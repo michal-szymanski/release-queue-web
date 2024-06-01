@@ -15,12 +15,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { AnimatePresence, motion } from 'framer-motion';
 import { variants } from '@/lib/framer-motion';
 import MergeRequestBadge from '@/components/merge-request-badge';
-import { EventStore } from '@/stores/event-store';
+import { EventModel } from '@/models/event-model';
 
 dayjs.extend(relativeTime);
 
 type Props = {
-    model: EventStore;
+    model: EventModel;
     isQueueItem: boolean;
     isUserAuthor: boolean;
     isPipelineVisible: boolean;
@@ -47,7 +47,7 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
                         </Button>
                     )}
                     {canStepBack && (
-                        <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => stepBackInQueue(model.mergeRequest)}>
+                        <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => stepBackInQueue(model)}>
                             <ArrowDown className="size-5" />
                             <span className="sr-only">Step back in queue</span>
                         </Button>

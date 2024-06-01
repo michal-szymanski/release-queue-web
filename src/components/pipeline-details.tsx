@@ -1,10 +1,10 @@
 import PipelineStageIcon from '@/components/pipeline-stage-icon';
 import { PipelineBuildStatus } from '@/types';
 import { observer } from 'mobx-react';
-import { EventStore } from '@/stores/event-store';
+import { EventModel } from '@/models/event-model';
 
 type Props = {
-    model: EventStore;
+    model: EventModel;
 };
 
 const getBuildStatus = (isFailureAllowed: boolean, jobStatus: PipelineBuildStatus, buildStatus?: PipelineBuildStatus) => {
