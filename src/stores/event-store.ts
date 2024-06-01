@@ -6,21 +6,28 @@ export class EventStore {
     private _pipeline: PipelineEvent | null;
     private _jobs: JobEvent[];
     private _metadata: MergeRequestMetadata | null;
+    private _isRebasing: boolean;
 
     constructor({ mergeRequest, pipeline, jobs }: EventModel) {
         this._mergeRequest = mergeRequest;
         this._pipeline = pipeline;
         this._jobs = jobs;
         this._metadata = null;
+        this._isRebasing = false;
 
         makeAutoObservable(this);
 
         this.updateMetadata();
 
         reaction(
-            () => this._pipeline,
-            async () => {
+            () => ({ pipeline: this.pipeline, isRebasing: this.isRebasing }),
+            async ({ pipeline, isRebasing }) => {
                 await this.updateMetadata();
+
+                if (!isRebasing || !pipeline) return;
+
+                const isPipelineRunning = pipeline.object_attributes.status === 'running';
+                this.setRebasing(!isPipelineRunning);
             }
         );
     }
@@ -46,7 +53,7 @@ export class EventStore {
     }
 
     get isRebasing() {
-        return false;
+        return this._isRebasing;
     }
 
     updateMergeRequest(mergeRequest: MergeRequestEvent) {
@@ -82,19 +89,22 @@ export class EventStore {
         this._jobs = [];
     }
 
+    setRebasing(value: boolean) {
+        this._isRebasing = value;
+    }
+
     async rebase() {
+        this.setRebasing(true);
+
         const url = `/api/gitlab/projects/${this.mergeRequest.project.id}/merge-requests/${this.mergeRequest.object_attributes.iid}/rebase`;
+
         const response = await fetch(url, {
             method: 'POST'
         });
 
         if (!response.ok) {
-            return;
+            this.setRebasing(false);
         }
-
-        const json = await response.json();
-
-        const { rebase_in_progress } = rebaseResponseSchema.parse(json);
     }
 
     async updateMetadata() {
@@ -108,9 +118,14 @@ export class EventStore {
         if (!response.ok) return;
 
         const json = await response.json();
+        const metatada = mergeRequestsResponseSchema.parse(json);
 
         runInAction(() => {
-            this._metadata = mergeRequestsResponseSchema.parse(json);
+            this._metadata = metatada;
         });
+
+        if (metatada.detailed_merge_status !== 'checking') return;
+
+        setTimeout(async () => await this.updateMetadata(), 1000);
     }
 }

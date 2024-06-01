@@ -18,16 +18,16 @@ export const POST = async (req: NextRequest, { params }: { params: Params }) => 
 
         const url = `${env.GITLAB_URL}/api/v4/projects/${projectId}/merge_requests/${mergeRequestIid}/rebase`;
 
-        const rebaseResponse = await fetch(url, {
+        const gitlabResponse = await fetch(url, {
             method: 'PUT',
             headers: {
                 Authorization: `Bearer ${token.access_token}`
             }
         });
 
-        const rebasePayload = await rebaseResponse.json();
+        const gitlabPayload = await gitlabResponse.json();
 
-        return NextResponse.json({ status: rebaseResponse.status, payload: rebasePayload }, { status: 200 });
+        return NextResponse.json(gitlabPayload, { status: gitlabResponse.status });
     } catch (e) {
         return NextResponse.json(e, { status: 400 });
     }
