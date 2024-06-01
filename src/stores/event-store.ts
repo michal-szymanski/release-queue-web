@@ -26,7 +26,7 @@ export class EventStore {
 
                 if (!isRebasing || !pipeline) return;
 
-                const isPipelineRunning = pipeline.object_attributes.status === 'running';
+                const isPipelineRunning = pipeline.object_attributes.status === 'pending';
                 this.setRebasing(!isPipelineRunning);
             }
         );
