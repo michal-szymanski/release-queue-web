@@ -1,6 +1,5 @@
 import PipelineStageIcon from '@/components/pipeline-stage-icon';
-import { MergeRequestEvent, PipelineBuildStatus } from '@/types';
-import { useStore } from '@/hooks';
+import { PipelineBuildStatus } from '@/types';
 import { observer } from 'mobx-react';
 import { EventStore } from '@/stores/event-store';
 

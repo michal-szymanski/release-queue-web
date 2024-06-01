@@ -1,9 +1,7 @@
 import MergeRequest from '@/components/merge-request';
-import { MergeRequestEvent } from '@/types';
 import { useStore, useUser } from '@/hooks';
 import { AnimatePresence, motion } from 'framer-motion';
 import { variants } from '@/lib/framer-motion';
-import { EventStore } from '@/stores/event-store';
 import { observer } from 'mobx-react';
 
 const MergeRequestList = () => {
@@ -19,8 +17,6 @@ const MergeRequestList = () => {
         <div className="flex flex-col gap-2 py-1">
             <AnimatePresence mode="popLayout">
                 {models.map((model, i) => {
-                    const isUserAuthor = user.id === model.mergeRequest.user.id;
-
                     return (
                         <motion.div
                             key={model.mergeRequest.object_attributes.iid}

@@ -1,28 +1,17 @@
-import {
-    EventModel,
-    JobEvent,
-    jobEventSchema,
-    MergeRequestEvent,
-    mergeRequestEventSchema,
-    MergeRequestMetadata,
-    mergeRequestsResponseSchema,
-    PipelineEvent,
-    pipelineEventSchema,
-    rebaseResponseSchema
-} from '@/types';
-import { makeAutoObservable, reaction } from 'mobx';
-import { io } from 'socket.io-client';
+import { EventModel, JobEvent, MergeRequestEvent, MergeRequestMetadata, mergeRequestsResponseSchema, PipelineEvent, rebaseResponseSchema } from '@/types';
+import { makeAutoObservable, reaction, runInAction } from 'mobx';
 
 export class EventStore {
     private _mergeRequest: MergeRequestEvent;
-    private _pipeline?: PipelineEvent;
+    private _pipeline: PipelineEvent | null;
     private _jobs: JobEvent[];
-    private _metadata?: MergeRequestMetadata;
+    private _metadata: MergeRequestMetadata | null;
 
     constructor({ mergeRequest, pipeline, jobs }: EventModel) {
         this._mergeRequest = mergeRequest;
         this._pipeline = pipeline;
         this._jobs = jobs;
+        this._metadata = null;
 
         makeAutoObservable(this);
 
@@ -66,12 +55,14 @@ export class EventStore {
     }
 
     updatePipeline(pipeline: PipelineEvent) {
-        console.log('update pipeline');
+        console.log('current pipeline', this.pipeline);
+        console.log('update pipeline', pipeline);
         this._pipeline = pipeline;
     }
 
     updateJob(job: JobEvent) {
-        console.log('add job');
+        console.log('current jobs', this.jobs.slice());
+        console.log('add job', job);
         const jobs = this._jobs.map((j) => {
             if (j.build_id === job.build_id) {
                 return job;
@@ -106,7 +97,7 @@ export class EventStore {
         const { rebase_in_progress } = rebaseResponseSchema.parse(json);
     }
 
-    private async updateMetadata() {
+    async updateMetadata() {
         console.log('update metadata');
         const url = `/api/gitlab/projects/${this._mergeRequest.project.id}/merge-requests/${this._mergeRequest.object_attributes.iid}`;
 
@@ -117,6 +108,9 @@ export class EventStore {
         if (!response.ok) return;
 
         const json = await response.json();
-        this._metadata = mergeRequestsResponseSchema.parse(json);
+
+        runInAction(() => {
+            this._metadata = mergeRequestsResponseSchema.parse(json);
+        });
     }
 }

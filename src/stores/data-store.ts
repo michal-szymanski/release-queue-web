@@ -1,4 +1,13 @@
-import { EventModel, eventModelSchema, JobEvent, jobEventSchema, MergeRequestEvent, mergeRequestEventSchema, pipelineEventSchema } from '@/types';
+import {
+    EventModel,
+    eventModelSchema,
+    JobEvent,
+    jobEventSchema,
+    MergeRequestEvent,
+    mergeRequestEventSchema,
+    PipelineEvent,
+    pipelineEventSchema
+} from '@/types';
 import { action, computed, IObservableArray, makeObservable, observable, runInAction } from 'mobx';
 import { io } from 'socket.io-client';
 import { z } from 'zod';
@@ -12,12 +21,14 @@ export class DataStore {
     private _socket: ReturnType<typeof io> = io(env.NEXT_PUBLIC_WEBSOCKET_URL, { withCredentials: true });
     private _isQueueLoaded = false;
     private _unassignedJobs: IObservableArray<JobEvent>;
+    private _unassignedPipelines: IObservableArray<PipelineEvent>;
 
     constructor() {
         type PrivateMembers = 'updateQueueMap' | 'setIsQueueLoaded' | '_socket' | 'setModels' | 'addModel' | '_isQueueLoaded';
 
         this.models = observable.array([]);
         this._unassignedJobs = observable.array([]);
+        this._unassignedPipelines = observable.array([]);
 
         makeObservable<DataStore, PrivateMembers>(this, {
             // Observables
@@ -53,8 +64,12 @@ export class DataStore {
         });
     }
 
-    async removeFromQueue(event: MergeRequestEvent) {
-        this._socket.emit('remove-from-queue', event.object_attributes.iid);
+    async removeFromQueue(model: EventStore) {
+        this._socket.emit('remove-from-queue', model.mergeRequest.object_attributes.iid);
+
+        if (model.mergeRequest.object_attributes.state === 'merged') {
+            this.models.remove(model);
+        }
     }
 
     stepBackInQueue(event: MergeRequestEvent) {
@@ -139,25 +154,35 @@ export class DataStore {
         });
 
         this._socket.on('merge-request', (payload) => {
+            console.log('merge-request');
+
             const message = mergeRequestEventSchema.parse(payload);
 
             const model = this.models.find((model) => model.mergeRequest.object_attributes.iid === message.object_attributes.iid);
             const unassignedJobs = this._unassignedJobs.filter((job) => job.commit.sha === message.object_attributes.last_commit.id);
+            const unassignedPipeline = this._unassignedPipelines.find((pipeline) => pipeline.commit.id === message.object_attributes.last_commit.id);
 
             if (model) {
                 model.updateMergeRequest(message);
 
+                if (model.mergeRequest.object_attributes.state === 'merged') return;
+
+                if (unassignedPipeline) {
+                    model.updatePipeline(unassignedPipeline);
+                }
+
                 if (unassignedJobs.length) {
                     model.clearJobs();
 
-                    for (let job of unassignedJobs) {
+                    for (const job of unassignedJobs) {
                         model.updateJob(job);
                     }
                 }
             } else {
                 this.addModel({
                     mergeRequest: message,
-                    jobs: unassignedJobs
+                    jobs: unassignedJobs,
+                    pipeline: unassignedPipeline ?? null
                 });
             }
 
@@ -166,22 +191,42 @@ export class DataStore {
                     this._unassignedJobs.replace(this._unassignedJobs.filter((uj) => unassignedJobs.some((j) => uj.build_id === j.build_id)));
                 });
             }
+
+            if (unassignedPipeline) {
+                runInAction(() => {
+                    this._unassignedPipelines.remove(unassignedPipeline);
+                });
+            }
         });
 
         this._socket.on('pipeline', (payload) => {
+            console.log('pipeline');
+
             const message = pipelineEventSchema.parse(payload);
 
             const model = this.models.find((model) => model.mergeRequest.object_attributes.last_commit.id === message.commit.id);
 
-            if (!model) return;
+            if (!model) {
+                runInAction(() => {
+                    this._unassignedPipelines.push(message);
+                });
+                return;
+            }
+
+            if (model.mergeRequest.object_attributes.state === 'merged') return;
 
             model.updatePipeline(message);
         });
 
         this._socket.on('job', (payload) => {
+            console.log('job');
+
             const message = jobEventSchema.parse(payload);
 
             const model = this.models.find((model) => model.mergeRequest.object_attributes.last_commit.id === message.commit.sha);
+
+            if (model?.mergeRequest.object_attributes.state === 'merged') return;
+
             if (model) {
                 model.updateJob(message);
             } else {
@@ -199,6 +244,20 @@ export class DataStore {
 
                     this._unassignedJobs.replace(jobs);
                 });
+            }
+        });
+
+        this._socket.on('repository-update', async (payload) => {
+            console.log('repository-update', payload);
+
+            const repositoryName = z.string().parse(payload);
+
+            const modelsToUpdate = this.models.filter(
+                (model) => model.mergeRequest.project.name === repositoryName && model.mergeRequest.object_attributes.state === 'opened'
+            );
+
+            for (const model of modelsToUpdate) {
+                await model.updateMetadata();
             }
         });
     }

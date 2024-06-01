@@ -35,11 +35,6 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
     const hasConflict = model.metadata?.detailed_merge_status === 'conflict';
     const needRebase = model.metadata?.detailed_merge_status === 'need_rebase';
 
-    //const { data: metadata } = useMergeRequest({ event, enabled: isQueueItem });
-    // const rebaseMutation = useRebaseMutation({ event });
-    // const hasConflict = metadata?.detailed_merge_status === 'conflict';
-    // const needRebase = metadata?.detailed_merge_status === 'need_rebase';
-
     const renderButton = () => {
         if (!isUserAuthor) return null;
 
@@ -50,9 +45,6 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
                         <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => model.rebase()}>
                             Rebase
                         </Button>
-                        // <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => rebaseMutation.mutate()}>
-                        //     Rebase
-                        // </Button>
                     )}
                     {canStepBack && (
                         <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => stepBackInQueue(model.mergeRequest)}>
@@ -60,7 +52,7 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
                             <span className="sr-only">Step back in queue</span>
                         </Button>
                     )}
-                    <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => removeFromQueue(model.mergeRequest)}>
+                    <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => removeFromQueue(model)}>
                         <Minus className="size-5" />
                         <span className="sr-only">Remove from queue</span>
                     </Button>

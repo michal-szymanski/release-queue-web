@@ -1,6 +1,4 @@
 import MergeRequestList from '@/components/merge-request-list';
-import { useStore } from '@/hooks';
-import { observer } from 'mobx-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export const MergeRequests = () => {
