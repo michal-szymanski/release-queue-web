@@ -26,8 +26,8 @@ export class EventModel {
 
                 if (!isRebasing || !pipeline) return;
 
-                const isPipelinePending = pipeline.object_attributes.status === 'pending';
-                this.setRebasing(!isPipelinePending);
+                const isPipelineStarting = pipeline.object_attributes.status === 'pending';
+                this.setRebasing(!isPipelineStarting);
             }
         );
     }
