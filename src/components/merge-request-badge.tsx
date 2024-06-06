@@ -28,7 +28,7 @@ const MergeRequestBadge = ({ state }: Props) => {
 
     return (
         <Badge
-            className={cn('hover:bg-tra capitalize', {
+            className={cn('pointer-events-none h-6 capitalize', {
                 'bg-green-500': state === 'opened',
                 'bg-blue-500': state === 'merged'
             })}

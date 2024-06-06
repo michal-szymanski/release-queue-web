@@ -39,17 +39,10 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
 
         if (isQueueItem) {
             return (
-                <>
-                    {needRebase && !model.isRebasing && (
-                        <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => model.rebase()}>
-                            Rebase
-                        </Button>
-                    )}
-                    <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => removeFromQueue(model)}>
-                        <Minus className="size-5" />
-                        <span className="sr-only">Remove from queue</span>
-                    </Button>
-                </>
+                <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => removeFromQueue(model)}>
+                    <Minus className="size-5" />
+                    <span className="sr-only">Remove from queue</span>
+                </Button>
             );
         }
 
@@ -76,11 +69,12 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
                             <div className="flex gap-2 pl-2">{renderButtons()}</div>
                         </div>
                         {!isQueueItem && <CardDescription>{model.mergeRequest.repository.name}</CardDescription>}
-                        <div>
+                        <div className="flex items-center gap-5">
                             {isQueueItem && <MergeRequestBadge state={model.mergeRequest.object_attributes.state} />}
                             <AnimatePresence>
                                 {isQueueItem && hasConflict && (
                                     <motion.div
+                                        key="merge-conflicts"
                                         variants={variants}
                                         initial={['hidden', 'size-small']}
                                         animate={['visible', 'size-normal']}
@@ -94,6 +88,20 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
                                                 <TooltipContent className="pointer-events-none">Merge conflicts</TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
+                                    </motion.div>
+                                )}
+                                {needRebase && !model.isRebasing && (
+                                    <motion.div
+                                        key="rebase-button"
+                                        variants={variants}
+                                        initial={['hidden', 'size-small']}
+                                        animate={['visible', 'size-normal']}
+                                        exit={['hidden', 'size-small']}
+                                        className="flex items-center"
+                                    >
+                                        <Button type="button" size="sm" variant="default" className="h-6" onClick={() => model.rebase()}>
+                                            Rebase
+                                        </Button>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -123,11 +131,11 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
                     <AnimatePresence>
                         {canStepBack && (
                             <motion.div
+                                key="step-back-button"
                                 variants={variants}
                                 initial={['hidden', 'size-small']}
                                 animate={['visible', 'size-normal']}
                                 exit={['hidden', 'size-small']}
-                                key="step-back-button"
                             >
                                 <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => stepBackInQueue(model)}>
                                     <ArrowDown className="size-5" />
