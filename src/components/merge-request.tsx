@@ -1,4 +1,3 @@
-import { MergeRequestEvent } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFallback } from '@radix-ui/react-avatar';
@@ -35,7 +34,7 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
     const hasConflict = model.metadata?.detailed_merge_status === 'conflict';
     const needRebase = model.metadata?.detailed_merge_status === 'need_rebase';
 
-    const renderButton = () => {
+    const renderButtons = () => {
         if (!isUserAuthor) return null;
 
         if (isQueueItem) {
@@ -44,12 +43,6 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
                     {needRebase && !model.isRebasing && (
                         <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => model.rebase()}>
                             Rebase
-                        </Button>
-                    )}
-                    {canStepBack && (
-                        <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => stepBackInQueue(model)}>
-                            <ArrowDown className="size-5" />
-                            <span className="sr-only">Step back in queue</span>
                         </Button>
                     )}
                     <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => removeFromQueue(model)}>
@@ -72,14 +65,18 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-start justify-between">
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-end gap-2">
-                            <a href={model.mergeRequest.object_attributes.url} target="_blank" rel="noopener noreferrer">
+        <Card className="w-[500px]">
+            <CardHeader className="w-full">
+                <CardTitle className="flex w-full items-start justify-between">
+                    <div className="flex w-full flex-col gap-2">
+                        <div className="flex w-full items-center justify-between">
+                            <a href={model.mergeRequest.object_attributes.url} target="_blank" rel="noopener noreferrer" className="max-w-full truncate">
                                 {model.mergeRequest.object_attributes.title}
                             </a>
+                            <div className="flex gap-2 pl-2">{renderButtons()}</div>
+                        </div>
+                        {!isQueueItem && <CardDescription>{model.mergeRequest.repository.name}</CardDescription>}
+                        <div>
                             {isQueueItem && <MergeRequestBadge state={model.mergeRequest.object_attributes.state} />}
                             <AnimatePresence>
                                 {isQueueItem && hasConflict && (
@@ -101,10 +98,8 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
                                 )}
                             </AnimatePresence>
                         </div>
-                        {!isQueueItem && <CardDescription>{model.mergeRequest.repository.name}</CardDescription>}
                         <CardDescription>Last update: {dayjs(model.mergeRequest.object_attributes.updated_at).fromNow()}</CardDescription>
                     </div>
-                    <div className="flex gap-2">{renderButton()}</div>
                 </CardTitle>
             </CardHeader>
 
@@ -115,7 +110,7 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
             )}
 
             {isQueueItem && (
-                <CardFooter>
+                <CardFooter className="h-14 justify-between">
                     <div className="flex gap-2">
                         <Avatar className="size-6">
                             <AvatarImage src={model.mergeRequest.user.avatar_url} />
@@ -125,6 +120,22 @@ const MergeRequest = ({ model, isQueueItem, isUserAuthor, isPipelineVisible, can
                         </Avatar>
                         <span>{model.mergeRequest.user.name}</span>
                     </div>
+                    <AnimatePresence>
+                        {canStepBack && (
+                            <motion.div
+                                variants={variants}
+                                initial={['hidden', 'size-small']}
+                                animate={['visible', 'size-normal']}
+                                exit={['hidden', 'size-small']}
+                                key="step-back-button"
+                            >
+                                <Button type="button" size="icon" variant="outline" className="size-8" onClick={() => stepBackInQueue(model)}>
+                                    <ArrowDown className="size-5" />
+                                    <span className="sr-only">Step back in queue</span>
+                                </Button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </CardFooter>
             )}
         </Card>
