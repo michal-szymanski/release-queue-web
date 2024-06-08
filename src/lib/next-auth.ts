@@ -1,8 +1,6 @@
-import { AuthOptions } from 'next-auth';
+import { AuthOptions, User } from 'next-auth';
 import GitlabProvider from 'next-auth/providers/gitlab';
-import { z } from 'zod';
 import { env } from '@/env';
-import { JWT } from 'next-auth/jwt';
 
 export const authOptions: AuthOptions = {
     pages: {
@@ -21,79 +19,70 @@ export const authOptions: AuthOptions = {
         })
     ],
     callbacks: {
-        async jwt({ token, account }) {
-            const isTokenActive = Date.now() < (token.expires_at ?? 0) * 1000;
-            const isSignIn = account !== null && account !== undefined;
+        async jwt({ token, account, profile }) {
+            if (account) {
+                const userProfile: User = {
+                    id: token.sub!,
+                    name: profile?.name,
+                    email: profile?.email,
+                    image: token?.picture
+                };
 
-            if (isTokenActive) {
+                return {
+                    access_token: account.access_token,
+                    expires_at: account.expires_at,
+                    refresh_token: account.refresh_token,
+                    user: userProfile
+                };
+            } else if (Date.now() < (token.expires_at ?? 0) * 1000) {
                 return token;
-            }
+            } else {
+                if (!token.refresh_token) {
+                    throw new Error('Missing refresh token.K');
+                }
 
-            if (isSignIn) {
-                token.access_token = account.access_token;
-            }
+                try {
+                    const response = await fetch(`${env.GITLAB_URL}/oauth/token`, {
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            client_id: env.GITLAB_CLIENT_ID,
+                            client_secret: env.GITLAB_CLIENT_SECRET,
+                            grant_type: 'refresh_token',
+                            refresh_token: token.refresh_token!
+                        }),
+                        method: 'POST'
+                    });
 
-            return rotatePersonalAccessToken(token);
+                    const json = await response.json();
+
+                    if (!response.ok) {
+                        console.log({ json });
+                        throw Error('Could not rotate access token.', json);
+                    }
+
+                    const { access_token, refresh_token, expires_in } = json as { access_token: string; refresh_token: string; expires_in: number };
+                    console.log('new tokens', { access_token, refresh_token });
+                    return {
+                        ...token,
+                        access_token,
+                        expires_at: Math.floor(Date.now() / 1000 + expires_in),
+                        refresh_token
+                    };
+                } catch (error) {
+                    console.error('Error refreshing access token', error);
+                    return {
+                        ...token,
+                        error: 'RefreshAccessTokenError' as const
+                    };
+                }
+            }
         },
         async session({ session, token }) {
-            session.user.id = z.coerce.number().positive().parse(token.sub);
+            if (token.user) {
+                session.user = token.user as User;
+            }
+
             return session;
         }
-    }
-};
-
-const personalAccessTokenSchema = z.object({
-    id: z.number(),
-    name: z.string(),
-    revoked: z.boolean(),
-    created_at: z.string().datetime(),
-    scopes: z.array(z.string()),
-    user_id: z.number(),
-    last_used_at: z.string().datetime().nullable(),
-    active: z.boolean(),
-    expires_at: z.string(),
-    token: z.string().optional()
-});
-
-type PersonalAccessToken = z.infer<typeof personalAccessTokenSchema>;
-
-const getPersonalAccessToken = async (token: JWT): Promise<PersonalAccessToken> => {
-    const response = await fetch(`${env.GITLAB_URL}/api/v4/personal_access_tokens?search=release-queue&revoked=false`, {
-        method: 'GET',
-        headers: {
-            Authorization: `Bearer ${token.access_token}`
-        }
-    });
-
-    const json = await response.json();
-
-    if (response.ok) {
-        return z.array(personalAccessTokenSchema).min(1).parse(json)[0];
-    }
-
-    throw Error('Could not retrieve personal access token.', json);
-};
-
-const rotatePersonalAccessToken = async (token: JWT): Promise<JWT> => {
-    try {
-        const { id } = await getPersonalAccessToken(token);
-        const response = await fetch(`${env.GITLAB_URL}/api/v4/personal_access_tokens/${id}/rotate`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${token.access_token}`
-            }
-        });
-
-        const json = await response.json();
-        const { token: newAccessToken, expires_at } = personalAccessTokenSchema.parse(json);
-
-        return {
-            ...token,
-            access_token: newAccessToken,
-            expires_at: new Date(expires_at).getTime() / 1000
-        };
-    } catch (e) {
-        console.error('Could not rotate personal access token.', e);
-        return token;
     }
 };

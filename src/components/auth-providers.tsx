@@ -13,7 +13,7 @@ const AuthProviders = ({ providers }: Props) => {
     if (!gitLabProvider) return null;
 
     return (
-        <Button type="button" variant="outline" onClick={() => signIn(gitLabProvider.id)}>
+        <Button type="button" variant="outline" onClick={() => signIn(gitLabProvider.id, { callbackUrl: '/' })}>
             <figure className="size-8">
                 <GitLabIcon />
             </figure>
