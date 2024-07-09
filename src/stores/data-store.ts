@@ -80,16 +80,22 @@ export class DataStore {
         return this._isQueueLoaded && this.queueMap.size === 0;
     }
 
-    getModelsByUserId(userId: number) {
+    getModelsByUserId(rawUserId: string) {
         const queueItems = Array.from(this.queueMap.values()).flatMap((item) => item);
 
-        return this.models
-            .filter(
-                (model) =>
-                    model.mergeRequest.object_attributes.author_id === userId &&
-                    !queueItems.some((item) => item.model.mergeRequest.object_attributes.iid === model.mergeRequest.object_attributes.iid)
-            )
-            .slice();
+        try {
+            const userId = z.coerce.number().parse(rawUserId);
+
+            return this.models
+                .filter(
+                    (model) =>
+                        model.mergeRequest.object_attributes.author_id === userId &&
+                        !queueItems.some((item) => item.model.mergeRequest.object_attributes.iid === model.mergeRequest.object_attributes.iid)
+                )
+                .slice();
+        } catch {
+            return [];
+        }
     }
 
     private setModels(params: EventModelParams[]) {

@@ -1,18 +1,20 @@
 import MergeRequest from '@/components/merge-request';
-import { useStore, useUser } from '@/hooks';
+import { useStore } from '@/hooks';
 import { AnimatePresence, motion } from 'framer-motion';
 import { variants } from '@/lib/framer-motion';
 import { observer } from 'mobx-react';
+import { useUser } from '@clerk/nextjs';
 
 const MergeRequestList = () => {
     const {
-        dataStore: { getModelsByUserId: userMergeRequests }
+        dataStore: { getModelsByUserId }
     } = useStore();
-    const user = useUser();
+
+    const { user } = useUser();
 
     if (!user) return null;
 
-    const models = userMergeRequests(user.id);
+    const models = getModelsByUserId(user.externalAccounts[0].providerUserId);
     return (
         <div className="flex flex-col gap-2 py-1">
             <AnimatePresence mode="popLayout">

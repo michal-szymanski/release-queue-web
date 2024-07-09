@@ -1,10 +1,9 @@
 import { ThemeDropdown } from '@/components/theme-dropdown';
-import { getServerSession, Session } from 'next-auth';
+import { currentUser } from '@clerk/nextjs/server';
 import UserButton from '@/components/user-button';
-import { authOptions } from '@/lib/next-auth';
 
 export const Header = async () => {
-    const session: Session | null = await getServerSession(authOptions);
+    const user = await currentUser();
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -12,7 +11,7 @@ export const Header = async () => {
                 <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
                     <nav className="flex items-center"></nav>
                     <ThemeDropdown />
-                    <UserButton session={session} />
+                    {user && <UserButton userInfo={{ fullName: user.fullName, imageUrl: user.imageUrl, email: user.primaryEmailAddress?.emailAddress }} />}
                 </div>
             </div>
         </header>

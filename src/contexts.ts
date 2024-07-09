@@ -1,4 +1,4 @@
 import { createContext } from 'react/';
-import { RootStore } from '@/stores';
+import { rootStore } from '@/stores';
 
-export const StoreContext = createContext<InstanceType<typeof RootStore> | null>(null);
+export const StoreContext = createContext<typeof rootStore | null>(null);

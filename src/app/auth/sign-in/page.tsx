@@ -1,17 +1,13 @@
-import { getProviders } from 'next-auth/react';
 import AuthProviders from '@/components/auth-providers';
-import { getServerSession } from 'next-auth';
-import { redirect } from 'next/navigation';
-import { authOptions } from '@/lib/next-auth';
 
 const Page = async () => {
-    const session = await getServerSession(authOptions);
+    // const session = await getServerSession(authOptions);
 
-    if (session) {
-        redirect('/');
-    }
+    // if (session) {
+    //     redirect('/');
+    // }
 
-    const providers = await getProviders();
+    // const providers = await getProviders();
     return (
         <div className="container relative hidden h-[800px] flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
             <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
@@ -29,7 +25,7 @@ const Page = async () => {
                                 <span className="bg-background px-2 text-muted-foreground">CONTINUE WITH</span>
                             </div>
                         </div>
-                        <AuthProviders providers={Object.values(providers ?? [])} />
+                        <AuthProviders />
                     </div>
                 </div>
             </div>

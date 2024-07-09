@@ -3,7 +3,7 @@
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFallback } from '@radix-ui/react-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Session } from 'next-auth';
+// import { Session } from 'next-auth';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -12,22 +12,26 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { signOut } from 'next-auth/react';
+// import { signOut } from 'next-auth/react';
 import { LogOut } from 'lucide-react';
+import { User } from '@clerk/nextjs/server';
+import { useAuth } from '@clerk/nextjs';
 
 type Props = {
-    session: Session | null;
+    userInfo: { fullName: string | null; imageUrl: string; email?: string } | null;
 };
 
-const UserButton = ({ session }: Props) => {
-    if (!session?.user) return null;
-    const { name, email, image } = session.user;
+const UserButton = ({ userInfo }: Props) => {
+    const { signOut } = useAuth();
+
+    if (!userInfo) return null;
+    const { fullName, imageUrl, email } = userInfo;
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Avatar className="size-6 cursor-pointer">
-                    <AvatarImage src={image ?? ''} />
+                    <AvatarImage src={imageUrl} />
                     <AvatarFallback>
                         <Skeleton className="size-6 rounded-full" />
                     </AvatarFallback>
@@ -35,7 +39,7 @@ const UserButton = ({ session }: Props) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
                 <DropdownMenuLabel>
-                    <div>{name}</div>
+                    <div>{fullName}</div>
                     <div className="text-xs text-muted-foreground">{email}</div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

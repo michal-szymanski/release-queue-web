@@ -2,22 +2,27 @@
 
 import { useContext } from 'react';
 import { StoreContext } from '@/contexts';
-import { useSession } from 'next-auth/react';
+// import { useSession } from 'next-auth/react';
 import { User, userSchema } from '@/types';
-import { RootStore } from '@/stores';
+import { rootStore } from '@/stores';
 
-export const useStore = (): RootStore => {
-    const rootStore = useContext(StoreContext);
+export const useStore = (): typeof rootStore => {
+    const store = useContext(StoreContext);
 
-    if (!rootStore) throw Error('RootStore is not available.');
+    if (!store) throw Error('RootStore is not available.');
 
-    return rootStore;
+    return store;
 };
 
 export const useUser = (): User | null => {
-    const { data } = useSession();
+    // const { data } = useSession();
 
-    if (!data) return null;
+    // if (!data) return null;
 
-    return userSchema.parse(data.user);
+    return userSchema.parse({
+        id: 1,
+        name: '',
+        email: '',
+        image: ''
+    });
 };
